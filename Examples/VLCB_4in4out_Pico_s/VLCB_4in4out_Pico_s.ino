@@ -187,10 +187,10 @@ void setupVLCB() {
   controller.indicateMode(modconfig.currentMode);
 
   // configure and start CAN bus and VLCB message processing
-  can2040.setNumBuffers(16, 4);  // more buffers = more memory used, fewer = less
-  can2040.setPins(1, 0);         // select pins for CAN Tx & Rx
+  vcan2040.setNumBuffers(16, 4);  // more buffers = more memory used, fewer = less
+  vcan2040.setPins(1, 0);         // select pins for CAN Tx & Rx
 
-  if (!can2040.begin()) {
+  if (!vcan2040.begin()) {
     Serial << F("> error starting VLCB") << endl;
   } else {
     Serial << F("> VLCB started") << endl;
