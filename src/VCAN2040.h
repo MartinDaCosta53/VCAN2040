@@ -9,7 +9,7 @@
 
 #include <Controller.h>
 #include <CanTransport.h>
-#include <ACAN2040.h>           // ACAN2515 library
+#include <ACAN2040.h>           // ACAN2040 library
 #include <CircularBuffer.h>
 
 namespace VLCB
@@ -37,10 +37,10 @@ public:
 
   // these methods are declared virtual in the base class and must be implemented by the derived class
   bool begin(bool poll = false, SPIClassRP2040 spi = SPI);    // note default args
-  bool available(void);
-  CANFrame getNextCANFrame(void);
-  bool sendCANFrame(CANFrame * msg);
-  void reset(void);
+  bool available() override;
+  CANFrame getNextCANFrame() override;
+  bool sendCANFrame(CANFrame * msg) override;
+  void reset() override;
 
   // these methods are specific to this implementation
   // they are not declared or implemented by the base CBUS class
@@ -48,6 +48,14 @@ public:
   void setPins(byte tx_pin, byte rx_pin);
   void printStatus(void);
   void notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *amsg);
+
+  virtual unsigned int receiveCounter()override { return _numMsgsRcvd; }
+  virtual unsigned int transmitCounter()override { return _numMsgsRcvd; }
+  virtual unsigned int receiveErrorCounter()override { return 0; }
+  virtual unsigned int transmitErrorCounter()override { return 0; }
+  virtual unsigned int errorStatus()override { return 0; }
+
+  ACAN2040 *canp;   // pointer to CAN object so user code can access its members
 
 private:
   unsigned int _numMsgsSent, _numMsgsRcvd;

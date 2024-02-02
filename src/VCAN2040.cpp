@@ -139,8 +139,24 @@ bool VCAN2040::sendCanFrame(CANFrame *msg)
   } else {
     Serial.printf("error sending message\n");
     return false;
-  }
-  
+  }  
+}
+
+//
+/// display the CAN bus status instrumentation
+//
+void CAN2040::printStatus()
+{
+  // removed so that no libraries produce serial output
+  // can be implemented in user's sketch
+
+  /*
+    DEBUG_SERIAL << F("> VLCB status:");
+    DEBUG_SERIAL << F(" messages received = ") << _numMsgsRcvd << F(", sent = ") << _numMsgsSent << F(", receive errors = ") << endl;
+           // canp->receiveErrorCounter() << F(", transmit errors = ") << canp->transmitErrorCounter() << F(", error flag = ")
+           // << canp->errorFlagRegister()
+           // << endl;
+   */
 }
 
 //
