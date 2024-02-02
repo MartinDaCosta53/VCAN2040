@@ -14,23 +14,22 @@ namespace VLCB
 {
 
 // static pointer to object
-VCAN2040 *acan2040p;
+VCAN2040 *vcan2040p;
 
 // static callback function
 static void cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg)
 {
-  acan2040p->notify_cb(cd, notify, msg);
+  vcan2040p->notify_cb(cd, notify, msg);
 }
 
 //
 /// constructor
 //
-VCAN2040::VCAN2040()
+VCAN2040::VCAN2040(byte rx_qsize, byte tx_qsize)
   : rx_buffer(rx_qsize)
   , tx_buffer(tx_qsize)
-  , _gpio_tx(0)
-  , _gpio_rx(0)
 {
+  vcan2040p = this;
 }
 
 void VCAN2040::setPins(byte gpio_tx, byte gpio_rx)
@@ -44,16 +43,15 @@ void VCAN2040::setPins(byte gpio_tx, byte gpio_rx)
 /// default poll arg is set to false, so as not to break existing code
 //
 
-bool VCAN2040::begin(bool poll, SPIClassRP2040 spi)
+bool VCAN2040::begin() //bool poll, SPIClassRP2040 spi)
 {
-  (void)(spi);
-  (void)poll;
+//  (void)(spi);
+//  (void)poll;
 
   acan2040 = new ACAN2040(0, _gpio_tx, _gpio_rx, CANBITRATE, F_CPU, cb);
   acan2040->begin();
   return true;
 }
-
 
 //
 /// get next message if a message is available in the buffer
@@ -61,14 +59,8 @@ bool VCAN2040::begin(bool poll, SPIClassRP2040 spi)
 
 CANFrame VCAN2040::getNextCanFrame(void)
 {
-  CANFrame frame;
-
-  if (rx_buffer.available())
-  {
-    ++_numMsgsRcvd;
-    memcpy((CANFrame *)&frame, rx_buffer->pop(), sizeof(CANFrame));
-    return frame;
-  }
+  ++_numMsgsRcvd;
+  return rx_buffer.pop(); 
 }
 
 //
@@ -89,9 +81,9 @@ void VCAN2040::notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg
     frame.len = amsg->dlc;
     frame.rtr = amsg->id & CAN2040_ID_RTR;
     frame.ext = amsg->id & CAN2040_ID_EFF;
-    memcopy(frame.data, amsg->data, amsg->dlc);
+    memcpy(frame.data, amsg->data, amsg->dlc);
 
-    rx_buffer->put(&frame);
+    rx_buffer.put(frame);
     break;
 
   case CAN2040_NOTIFY_TX:
@@ -111,7 +103,7 @@ void VCAN2040::notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg
 //
 /// send a VLCB message
 //
-bool VCAN2040::sendCanFrame(CANFrame *msg)
+bool VCAN2040::sendCanFrame(CANFrame *frame)
 {
   struct can2040_msg msg;
   
@@ -145,7 +137,7 @@ bool VCAN2040::sendCanFrame(CANFrame *msg)
 //
 /// display the CAN bus status instrumentation
 //
-void CAN2040::printStatus()
+void VCAN2040::printStatus()
 {
   // removed so that no libraries produce serial output
   // can be implemented in user's sketch
@@ -153,8 +145,8 @@ void CAN2040::printStatus()
   /*
     DEBUG_SERIAL << F("> VLCB status:");
     DEBUG_SERIAL << F(" messages received = ") << _numMsgsRcvd << F(", sent = ") << _numMsgsSent << F(", receive errors = ") << endl;
-           // canp->receiveErrorCounter() << F(", transmit errors = ") << canp->transmitErrorCounter() << F(", error flag = ")
-           // << canp->errorFlagRegister()
+           // acan2040->receiveErrorCounter() << F(", transmit errors = ") << acan2040->transmitErrorCounter() << F(", error flag = ")
+           // << acan2040->errorFlagRegister()
            // << endl;
    */
 }
@@ -165,8 +157,8 @@ void CAN2040::printStatus()
 
 void VCAN2040::reset(void)
 {
-  delete rx_buffer;
-  delete tx_buffer;
+  rx_buffer.clear();
+  tx_buffer.clear();
   delete acan2040;
   begin();
 }
@@ -175,10 +167,10 @@ void VCAN2040::reset(void)
 /// set the number of CAN frame receive buffers
 /// this can be tuned according to bus load and available memory
 //
-
+/*
 void VCAN2040::setNumBuffers(byte num_rx_buffers, byte num_tx_buffers) {
-  rx_buffers(num_rx_buffers);
-  tx_buffers(num_tx_buffers);
+  rx_buffer(num_rx_buffers);
+  tx_buffer(num_tx_buffers);
 }
-
+*/
 }

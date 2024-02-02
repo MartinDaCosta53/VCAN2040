@@ -17,10 +17,8 @@ namespace VLCB
 
 // constants
 
-static const byte tx_qsize = 8;
-static const byte rx_qsize = 32;
-static const byte tx_pin = 1;    //Do I need this?
-static const byte rx_pin = 2;    //Do I need this?
+static const byte TX_QSIZE = 8;
+static const byte RX_QSIZE = 32;
 static const uint32_t CANBITRATE = 125000UL;                // 125Kb/s - fixed for CBUS
 
 
@@ -33,18 +31,18 @@ class VCAN2040 : public CanTransport
 {
 public:
 
-  VCAN2040();
+  VCAN2040(byte rx_qsize = RX_QSIZE, byte tx_qsize = TX_QSIZE);
 
   // these methods are declared virtual in the base class and must be implemented by the derived class
-  bool begin(bool poll = false, SPIClassRP2040 spi = SPI);    // note default args
+  bool begin(); //bool poll = false, SPIClassRP2040 spi = SPI);    // note default args
   bool available() override;
-  CANFrame getNextCANFrame() override;
-  bool sendCANFrame(CANFrame * msg) override;
+  CANFrame getNextCanFrame() override;
+  bool sendCanFrame(CANFrame * msg) override;
   void reset() override;
 
   // these methods are specific to this implementation
   // they are not declared or implemented by the base CBUS class
-  void setNumBuffers(byte num_rx_buffers, byte _num_tx_buffers = 2);
+  //void setNumBuffers(byte num_rx_buffers, byte _num_tx_buffers = 2);
   void setPins(byte tx_pin, byte rx_pin);
   void printStatus(void);
   void notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *amsg);
@@ -55,11 +53,12 @@ public:
   virtual unsigned int transmitErrorCounter()override { return 0; }
   virtual unsigned int errorStatus()override { return 0; }
 
-  ACAN2040 *canp;   // pointer to CAN object so user code can access its members
+  ACAN2040 *acan2040;   // pointer to CAN object so user code can access its members
 
 private:
   unsigned int _numMsgsSent, _numMsgsRcvd;
   byte _num_rx_buffers, _num_tx_buffers;
+  byte _gpio_tx, _gpio_rx;
 
   CircularBuffer<CANFrame> rx_buffer;
   CircularBuffer<CANFrame> tx_buffer;  // Not currently used

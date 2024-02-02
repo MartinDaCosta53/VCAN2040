@@ -107,7 +107,7 @@ const byte SWITCH0 = 13;  // CBUS push button switch pin
 
 // Controller objects
 VLCB::Configuration modconfig;               // configuration object
-VLCB::VCAN2040 vcan2040;                  // CAN transport object
+VLCB::VCAN2040 vcan2040 (16,4);                  // CAN transport object
 VLCB::LEDUserInterface ledUserInterface(LED_GRN, LED_YLW, SWITCH0);
 VLCB::SerialUserInterface serialUserInterface(&vcan2040);
 VLCB::MinimumNodeService mnService;
@@ -187,7 +187,7 @@ void setupVLCB() {
   controller.indicateMode(modconfig.currentMode);
 
   // configure and start CAN bus and VLCB message processing
-  vcan2040.setNumBuffers(16, 4);  // more buffers = more memory used, fewer = less
+  //vcan2040.setNumBuffers(16, 4);  // more buffers = more memory used, fewer = less
   vcan2040.setPins(1, 0);         // select pins for CAN Tx & Rx
 
   if (!vcan2040.begin()) {
