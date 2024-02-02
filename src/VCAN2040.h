@@ -49,13 +49,6 @@ public:
   void printStatus(void);
   void notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *amsg);
 
-
-
-
-
-
-
-
 private:
   unsigned int _numMsgsSent, _numMsgsRcvd;
   byte _num_rx_buffers, _num_tx_buffers;
@@ -63,6 +56,5 @@ private:
   CircularBuffer<CANFrame> rx_buffer;
   CircularBuffer<CANFrame> tx_buffer;  // Not currently used
 
-
-
+};
 }
