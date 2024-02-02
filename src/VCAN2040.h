@@ -38,8 +38,8 @@ public:
   // these methods are declared virtual in the base class and must be implemented by the derived class
   bool begin(bool poll = false, SPIClassRP2040 spi = SPI);    // note default args
   bool available(void);
-  CANFrame getNextMessage(void);
-  bool sendMessage(CANFrame * msg, bool rtr = false, bool ext = false, byte priority = DEFAULT_PRIORITY);   // note default arguments
+  CANFrame getNextCANFrame(void);
+  bool sendCANFrame(CANFrame * msg);
   void reset(void);
 
   // these methods are specific to this implementation
