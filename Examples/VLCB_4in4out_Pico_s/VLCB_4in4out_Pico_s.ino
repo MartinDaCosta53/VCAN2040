@@ -317,7 +317,7 @@ void processSwitches(void)
 //
 /// called from the VLCB library when a learned event is received
 //
-void eventhandler(byte index, VLCB::CANFrame *msg)
+void eventhandler(byte index, const VLCB::VlcbMessage *msg)
 {
   byte opc = msg->data[0];
 

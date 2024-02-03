@@ -32,6 +32,7 @@ class VCAN2040 : public CanTransport
 public:
 
   VCAN2040(byte rx_qsize = RX_QSIZE, byte tx_qsize = TX_QSIZE);
+  virtual ~VCAN2040();
 
   // these methods are declared virtual in the base class and must be implemented by the derived class
   bool begin(); //bool poll = false, SPIClassRP2040 spi = SPI);    // note default args

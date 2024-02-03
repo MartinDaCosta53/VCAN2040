@@ -32,6 +32,9 @@ VCAN2040::VCAN2040(byte rx_qsize, byte tx_qsize)
   vcan2040p = this;
 }
 
+VCAN2040::~VCAN2040()
+{}
+
 void VCAN2040::setPins(byte gpio_tx, byte gpio_rx)
 {
   _gpio_tx = gpio_tx;
@@ -51,6 +54,14 @@ bool VCAN2040::begin() //bool poll, SPIClassRP2040 spi)
   acan2040 = new ACAN2040(0, _gpio_tx, _gpio_rx, CANBITRATE, F_CPU, cb);
   acan2040->begin();
   return true;
+}
+
+//
+/// check if a message is available in the buffer.
+//
+bool VCAN2040::available()
+{
+  return rx_buffer.available();
 }
 
 //
