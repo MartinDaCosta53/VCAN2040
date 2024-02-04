@@ -45,17 +45,17 @@
 // Pin 21  GP16 Not Used
 // Pin 22  GP17 Not Used
 // Pin 23       0V
-// Pin 24  GP18 Not Used
-// Pin 25  GP19 Not Used
-// Pin 26  GP20 Not Used
-// Pin 27  GP21 Not Used
+// Pin 24  GP18 Switch 1
+// Pin 25  GP19 Switch 2
+// Pin 26  GP20 Switch 3
+// Pin 27  GP21 Switch 4
 // Pin 28       0V
-// Pin 29  GP22
+// Pin 29  GP22 LED 1
 // Pin 30  RUN Reset (active low)
-// Pin 31  GP26 ADC0 Not Used
-// Pin 32  GP27 ADC1 Not Used
+// Pin 31  GP26 LED 2
+// Pin 32  GP27 LED 3
 // Pin 33       0V
-// Pin 34  GP28 ADC2 Not Used
+// Pin 34  GP28 LED 4
 // Pin 35   ADC_VREF
 // Pin 36   3V3
 // Pin 37   3V3_EN
@@ -64,7 +64,7 @@
 // Pin 40   VBUS
 //////////////////////////////////////////////////////////////////////////
 
-#define DEBUG 1  // set to 0 for no serial debug
+#define DEBUG 0  // set to 0 for no serial debug
 
 #if DEBUG
 #define DEBUG_PRINT(S) Serial << S << endl
@@ -152,8 +152,7 @@ void setupVLCB() {
   modconfig.EE_EVENTS_START = 50;
   modconfig.EE_MAX_EVENTS = 64;
   modconfig.EE_PRODUCED_EVENTS = NUM_SWITCHES;
-  modconfig.EE_NUM_EVS = 1 + NUM_LEDS;
-  
+  modconfig.EE_NUM_EVS = 1 + NUM_LEDS;  
 
   // initialise and load configuration
   controller.begin();
@@ -221,10 +220,10 @@ void setupModule()
   Serial << "> Module has " << NUM_LEDS << " LEDs and " << NUM_SWITCHES << " switches." << endl;
 }
 
-
 void setup()
 {
   Serial.begin(115200);
+  delay(1000);
   Serial << endl << endl << F("> ** VLCB 4 in 4 out Pico single core ** ") << __FILE__ << endl;
 
   setupVLCB();
@@ -233,7 +232,6 @@ void setup()
   // end of setup
   Serial << F("> ready") << endl << endl;
 }
-
 
 void loop() {
 
@@ -248,13 +246,12 @@ void loop() {
   // test for switch input
   processSwitches();
 
-  // bottom of loop()
+  // end of loop()
 }
 
 void processSwitches(void)
 {
-  bool isSuccess = true;
-  for (int i = 0; i < NUM_SWITCHES; i++)
+  for (byte i = 0; i < NUM_SWITCHES; i++)
   {
     moduleSwitch[i].update();
     if (moduleSwitch[i].changed())
@@ -264,14 +261,14 @@ void processSwitches(void)
       bool state;
       byte swNum = i + 1;
 
-      // DEBUG_PRINT(F("sk> Button ") << i << F(" state change detected. NV Value = ") << nvval);
+      DEBUG_PRINT(F("sk> Button ") << i << F(" state change detected. NV Value = ") << nvval);
 
       switch (nvval)
       {
         case 1:
           // ON and OFF
           state = (moduleSwitch[i].fell());
-          //DEBUG_PRINT(F("sk> Button ") << i << (moduleSwitch[i].fell() ? F(" pressed, send state: ") : F(" released, send state: ")) << state);
+          DEBUG_PRINT(F("sk> Button ") << i << (moduleSwitch[i].fell() ? F(" pressed, send state: ") : F(" released, send state: ")) << state);
           epService.sendEvent(state, swNum);
           break;
 
@@ -280,7 +277,7 @@ void processSwitches(void)
           if (moduleSwitch[i].fell()) 
           {
             state = true;
-            //DEBUG_PRINT(F("sk> Button ") << i << F(" pressed, send state: ") << state);
+            DEBUG_PRINT(F("sk> Button ") << i << F(" pressed, send state: ") << state);
             epService.sendEvent(state, swNum);
           }
           break;
@@ -290,7 +287,7 @@ void processSwitches(void)
           if (moduleSwitch[i].fell())
           {
             state = false;
-            //DEBUG_PRINT(F("sk> Button ") << i << F(" pressed, send state: ") << state);
+            DEBUG_PRINT(F("sk> Button ") << i << F(" pressed, send state: ") << state);
             epService.sendEvent(state, swNum);
           }
           break;
@@ -301,13 +298,13 @@ void processSwitches(void)
           {
             switchState[i] = !switchState[i];
             state = (switchState[i]);
-            //DEBUG_PRINT(F("sk> Button ") << i << (moduleSwitch[i].fell() ? F(" pressed, send state: ") : F(" released, send state: ")) << state);
+            DEBUG_PRINT(F("sk> Button ") << i << (moduleSwitch[i].fell() ? F(" pressed, send state: ") : F(" released, send state: ")) << state);
             epService.sendEvent(state, swNum);
           }
           break;
 
         default:
-          //DEBUG_PRINT(F("sk> Button ") << i << F(" do nothing."));
+          DEBUG_PRINT(F("sk> Button ") << i << F(" do nothing."));
           break;
       }
     }
@@ -321,18 +318,18 @@ void eventhandler(byte index, const VLCB::VlcbMessage *msg)
 {
   byte opc = msg->data[0];
 
-  //DEBUG_PRINT(F("sk> event handler: index = ") << index << F(", opcode = 0x") << _HEX(msg->data[0]));
+  DEBUG_PRINT(F("sk> event handler: index = ") << index << F(", opcode = 0x") << _HEX(msg->data[0]));
 
   unsigned int node_number = (msg->data[1] << 8) + msg->data[2];
   unsigned int event_number = (msg->data[3] << 8) + msg->data[4];
-  //DEBUG_PRINT(F("sk> NN = ") << node_number << F(", EN = ") << event_number);
-  //DEBUG_PRINT(F("sk> op_code = ") << opc);
+  DEBUG_PRINT(F("sk> NN = ") << node_number << F(", EN = ") << event_number);
+  DEBUG_PRINT(F("sk> op_code = ") << opc);
 
   switch (opc)
   {
     case OPC_ACON:
     case OPC_ASON:
-      //DEBUG_PRINT(F("sk> case is opCode ON"));
+      DEBUG_PRINT(F("sk> case is opCode ON"));
       for (byte i = 0; i < NUM_LEDS; i++)
       {
         byte ev = i + 2;
@@ -361,7 +358,7 @@ void eventhandler(byte index, const VLCB::VlcbMessage *msg)
 
     case OPC_ACOF:
     case OPC_ASOF:
-      //DEBUG_PRINT(F("sk> case is opCode OFF"));
+      DEBUG_PRINT(F("sk> case is opCode OFF"));
       for (byte i = 0; i < NUM_LEDS; i++)
       {
         byte ev = i + 2;

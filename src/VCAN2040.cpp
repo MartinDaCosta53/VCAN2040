@@ -85,7 +85,7 @@ void VCAN2040::notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg
   switch (notify)
   {
   case CAN2040_NOTIFY_RX:
-    Serial.printf("acan2040 cb: message received\n");
+    //Serial.printf("acan2040 cb: message received\n");
 
     CANFrame frame;
     frame.id = amsg->id;
@@ -98,7 +98,7 @@ void VCAN2040::notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg
     break;
 
   case CAN2040_NOTIFY_TX:
-    Serial.printf("acan2040 cb: message sent ok\n");
+    //Serial.printf("acan2040 cb: message sent ok\n");
     break;
   case CAN2040_NOTIFY_ERROR:
     Serial.printf("acan2040 cb: an error occurred\n");
