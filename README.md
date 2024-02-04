@@ -20,7 +20,7 @@ Note that this library depends on a number of other libraries which must also be
 ## Hardware
 
 Currently supports the Raspberry Pie Pico using Earle Philhowers Arduino IDE board support
-[Pico](https://github.com/earlephilhower/arduino-pico)
+[Pico Arduino IDE](https://github.com/earlephilhower/arduino-pico)
 
 ## Getting help and support
 
