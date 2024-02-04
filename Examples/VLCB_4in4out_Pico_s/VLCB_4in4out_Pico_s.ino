@@ -1,5 +1,5 @@
 
-// VLCBmINnOUT
+// VLCB4IN4OUT
 // Version for use with Raspberry Pi Pico with software CAN Controller.
 // Uses a single core of the RP2040.
 
@@ -195,6 +195,7 @@ void setupVLCB() {
     Serial << F("> VLCB started") << endl;
   }
 }
+
 //
 ///  setup Module - runs once at power on called from setup()
 //
@@ -233,7 +234,8 @@ void setup()
   Serial << F("> ready") << endl << endl;
 }
 
-void loop() {
+void loop()
+{
 
   // do VLCB message, switch and LED processing
   controller.process();
@@ -323,7 +325,7 @@ void eventhandler(byte index, const VLCB::VlcbMessage *msg)
   unsigned int node_number = (msg->data[1] << 8) + msg->data[2];
   unsigned int event_number = (msg->data[3] << 8) + msg->data[4];
   DEBUG_PRINT(F("sk> NN = ") << node_number << F(", EN = ") << event_number);
-  DEBUG_PRINT(F("sk> op_code = ") << opc);
+  DEBUG_PRINT(F("sk> op_code = ") << _HEX(opc));
 
   switch (opc)
   {
