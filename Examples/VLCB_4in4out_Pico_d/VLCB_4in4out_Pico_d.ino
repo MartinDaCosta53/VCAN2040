@@ -39,8 +39,8 @@
 // Pin 16  GP12 Not Used
 // Pin 17  GP13 Request Switch (CBUS)
 // Pin 18       0V
-// Pin 19  GP14 CBUS green SLiM LED pin
-// Pin 20  GP15 CBUS yellow FLiM LED pin
+// Pin 19  GP14 CBUS green LED pin
+// Pin 20  GP15 CBUS yellow LED pin
 // Pin 21  GP16 Not Used
 // Pin 22  GP17 Not Used
 // Pin 23       0V
