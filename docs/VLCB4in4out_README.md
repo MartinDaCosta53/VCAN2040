@@ -50,7 +50,7 @@ important that a suitable current limiting resistor is fitted between +3V3 and t
 anode.  The LED cathode should be connected to the output pin.
 
 This additonal circuitry can be built using any breadboard technique with which the user
-is comfortable.  A circuit schematic of the authors test set is here [test circuit](PDFs/Pico 4in4out Schematic.pdf)
+is comfortable.  A circuit schematic of the authors test set is here [test circuit](https://github.com/MartinDaCosta53/VCAN2040/tree/main/docs/PDFs)
 
 It maybe that the Shield for Pico to CBus interface taht was renently show cased on the [MERG Forum](https://www.merg.org.uk/forum/viewtopic.php?f=316&t=18021)
 could be used but there is no information is currently available to the author for assessment.
