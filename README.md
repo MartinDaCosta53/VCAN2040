@@ -1,4 +1,4 @@
-<img align="right" src="Arduino VLCB.png"  width="150" height="75">
+<img align="right" src="ArduinoVLCB.png"  width="150" height="75">
 
 # VCAN2040
 This library provides a software CAN interface on a Raspberry Pie Pico when used in conjunction with the VLCB_Arduino library
