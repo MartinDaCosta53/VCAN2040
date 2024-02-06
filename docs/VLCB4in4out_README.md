@@ -9,13 +9,21 @@ Key Features:
 - Modular construction to ease adaptation to your application.
 - Runs on a Raspberry Pie Pico using a software CAN Controller.
 
+The example sketches are fully functional modules.  Whilst they can be used "as is", the
+primary objective is to be a guide for developers to create their own modules to meet their
+specific requirements.
+
 ## Overview
 
 The program is written in C++ but you do not need to understand this to use the program.
 The program includes a library that manages the LED functionality.
 
 NOTE: It can get difficult when using DEBUG to know where the message has come from. Those
-emanating from the sketch are preceded with the letters sk for sketch. 
+emanating from the sketch are preceded with the letters sk for sketch. In the case of dual
+core use, the numebr 0 or 1 appears before the > to indicate which core generated the message.
+Debug can be turned on by making #define DEBUG at the beginning of the sketch equal to 1.
+Similarly, debug can be turned off by making #define DEBUG equal to 0.  In teh Arduino IDE,
+debug logging will be shown in the Serial Monitor window.
 
 ## Using VLCB4in4out
 
@@ -30,21 +38,27 @@ Pin 19 GP14 | VLCB Green LED
 Pin 20 GP15 | VLCB Yellow LED
 Pin 17 GP13 | VLCB Switch
 
-**It is the users responsibility that the total current that the Arduino is asked to supply 
+**It is the users responsibility that the total current that the Pico is asked to supply 
 stays within the capacity of the on board regulator.  Failure to do this will result in 
-terminal damage to your Arduino.**
+terminal damage to your Pico.**
 
 Pins defined as inputs are active low.  That is to say that they are pulled up by an 
 internal resistor. The input switch should connect the pin to 0 Volts.
 
-Pins defined as outputs are active high.  They will source current to (say) an LED. It is 
-important that a suitable current limiting resistor is fitted between the pin and the LED 
-anode.  The LED cathode should be connected to ground.
+Pins defined as outputs are active low.  They will sink current from (say) an LED. It is 
+important that a suitable current limiting resistor is fitted between +3V3 and the LED 
+anode.  The LED cathode should be connected to the output pin.
+
+This additonal circuitry can be built using any breadboard technique with which the user
+is comfortable.  A circuit schematic of the authors test set is here [test circuit](PDFs/Pico 4in4out Schematic.pdf)
+
+It maybe that the Shield for Pico to CBus interface taht was renently show cased on the [MERG Forum](https://www.merg.org.uk/forum/viewtopic.php?f=316&t=18021)
+could be used but there is no information is currently available to the author for assessment.
 
 ### Library Dependencies
 
-As well as the VLCB Library suite associated with this example, the following third party
-libraries are required:
+As well as the [VLCB-Arduino](https://github.com/SvenRosvall/VLCB-Arduino) library suite
+associated with this example, the following third party libraries are required:
 
 Library | Purpose
 ---------------|-----------------
@@ -173,7 +187,7 @@ event automatically. It is necessary to highlight the redundant event and use
 alt-D to remove it.
 
 It should be noted that the use of alt-D only removes an event from the FCU internal
-table.  It does not remove the event from the Arduino events table.
+table.  It does not remove the event from the Pico events table.
 
 
  
