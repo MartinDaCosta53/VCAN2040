@@ -95,14 +95,15 @@
 #include "LEDControl.h"
 
 // constants
-const byte VER_MAJ = 1;     // code major version
-const char VER_MIN = 'a';   // code minor version
-const byte VER_BETA = 0;    // code beta sub-version
-const byte MODULE_ID = 99;  // CBUS module type
+const byte VER_MAJ = 1;          // code major version
+const char VER_MIN = 'a';        // code minor version
+const byte VER_BETA = 0;         // code beta sub-version
+const byte MODULE_ID = 82;       // CBUS module type
+const byte MANUFACTURER = MANU_DEV;   // Module Manufacturer set to Development
 
-const byte LED_GRN = 14;  // CBUS green SLiM LED pin
-const byte LED_YLW = 15;  // CBUS yellow FLiM LED pin
-const byte SWITCH0 = 13;  // CBUS push button switch pin
+const byte LED_GRN = 14;         // VLCB green Unitialised LED pin
+const byte LED_YLW = 15;         // VLCB yellow Normal LED pin
+const byte SWITCH0 = 13;         // VLCB push button switch pin
 
 // Controller objects
 VLCB::Configuration modconfig;               // configuration object
@@ -128,8 +129,8 @@ const byte SWITCH[] = { 18, 19, 20, 21 };  // Module Switch takes input to 0V.
 
 const bool active = 0;  // 0 is for active low LED drive. 1 is for active high
 
-const int NUM_LEDS = sizeof(LED) / sizeof(LED[0]);
-const int NUM_SWITCHES = sizeof(SWITCH) / sizeof(SWITCH[0]);
+const byte NUM_LEDS = sizeof(LED) / sizeof(LED[0]);
+const byte NUM_SWITCHES = sizeof(SWITCH) / sizeof(SWITCH[0]);
 
 // module objects
 Bounce moduleSwitch[NUM_SWITCHES];  //  switch as input
@@ -166,6 +167,7 @@ void setupVLCB() {
   VLCB::Parameters params(modconfig);
   params.setVersion(VER_MAJ, VER_MIN, VER_BETA);
   params.setModuleId(MODULE_ID);
+  params.setManufacturer(MANUFACTURER);
 
   // assign to Controller
   controller.setParams(params.getParams());
@@ -211,7 +213,7 @@ void setupModule()
   }
 
   // configure the module LEDs
-  for (int i = 0; i < NUM_LEDS; i++)
+  for (byte i = 0; i < NUM_LEDS; i++)
   {
     moduleLED[i].setPin(LED[i], active);  //Second arguement sets 0 = active low, 1 = active high. Default if no second arguement is active high.
     moduleLED[i].off();
@@ -273,7 +275,7 @@ void loop1()
   }
 
   // Run the LED code
-  for (int i = 0; i < NUM_LEDS; i++)
+  for (byte i = 0; i < NUM_LEDS; i++)
   {
     moduleLED[i].run();
   }
@@ -287,7 +289,7 @@ void loop1()
 void processSwitches(void)
 {
   
-  for (int i = 0; i < NUM_SWITCHES; i++)
+  for (byte i = 0; i < NUM_SWITCHES; i++)
   {
     moduleSwitch[i].update();
     if (moduleSwitch[i].changed())
@@ -392,7 +394,7 @@ void receivedData(byte length)
   switch (opc) {
     case OPC_ACON:
     case OPC_ASON:
-      for (int i = 0; i < NUM_LEDS; i++)
+      for (byte i = 0; i < NUM_LEDS; i++)
       {
         byte ev = i + 2;
         byte evval = modconfig.getEventEVval(index, ev);
@@ -418,7 +420,7 @@ void receivedData(byte length)
 
     case OPC_ACOF:
     case OPC_ASOF:
-      for (int i = 0; i < NUM_LEDS; i++) {
+      for (byte i = 0; i < NUM_LEDS; i++) {
         byte ev = i + 2;
         byte evval = modconfig.getEventEVval(index, ev);
 
