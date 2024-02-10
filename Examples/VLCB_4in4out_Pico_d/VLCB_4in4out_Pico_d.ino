@@ -98,8 +98,8 @@
 const byte VER_MAJ = 1;          // code major version
 const char VER_MIN = 'a';        // code minor version
 const byte VER_BETA = 0;         // code beta sub-version
-const byte MODULE_ID = 82;       // CBUS module type
 const byte MANUFACTURER = MANU_DEV;   // Module Manufacturer set to Development
+const byte MODULE_ID = 82;       // CBUS module type
 
 const byte LED_GRN = 14;         // VLCB green Unitialised LED pin
 const byte LED_YLW = 15;         // VLCB yellow Normal LED pin
@@ -166,8 +166,8 @@ void setupVLCB() {
   // set module parameters
   VLCB::Parameters params(modconfig);
   params.setVersion(VER_MAJ, VER_MIN, VER_BETA);
-  params.setModuleId(MODULE_ID);
   params.setManufacturer(MANUFACTURER);
+  params.setModuleId(MODULE_ID);  
 
   // assign to Controller
   controller.setParams(params.getParams());
