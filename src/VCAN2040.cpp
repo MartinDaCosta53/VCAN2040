@@ -118,12 +118,21 @@ bool VCAN2040::sendCanFrame(CANFrame *frame)
 {
   struct can2040_msg msg;
   
-  if (!acan2040->ok_to_send())
+  uint32_t timeRef = micros();
+  uint32_t waitTime = 0;
+  while (!acan2040->ok_to_send())
   {
-    Serial.print("no space available to send message");
-    return false;
+    //DEBUG_SERIAL << F("vcan2040> no space available to send message") << endl;
+    if (waitTime < 1000)
+    {
+      waitTime = micros() - timeRef;
+    }
+    else
+    {
+      return false;
+    }
   }
-  
+  //DEBUG_SERIAL << F("vcan2040> Wait Time = ") << waitTime << F(" usecs") << endl;
   msg.id - frame->id;
   
   if (frame->rtr)
@@ -137,10 +146,10 @@ bool VCAN2040::sendCanFrame(CANFrame *frame)
   
   if (acan2040->send_message(&msg))
   {
-  //  Serial.printf("ok\n");
+    //Serial.printf("vcan2040> ok\n");
     return true;
   } else {
-    Serial.printf("error sending message\n");
+    //Serial.printf("vcan2040> error sending message\n");
     return false;
   }  
 }
