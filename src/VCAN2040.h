@@ -49,7 +49,7 @@ public:
   void notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *amsg);
 
   virtual unsigned int receiveCounter()override { return _numMsgsRcvd; }
-  virtual unsigned int transmitCounter()override { return _numMsgsRcvd; }
+  virtual unsigned int transmitCounter()override { return _numMsgsSent; }
   virtual unsigned int receiveErrorCounter()override { return 0; }
   virtual unsigned int transmitErrorCounter()override { return 0; }
   virtual unsigned int errorStatus()override { return 0; }
