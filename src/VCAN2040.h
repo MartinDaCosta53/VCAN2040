@@ -41,10 +41,9 @@ public:
   bool sendCanFrame(CANFrame * msg) override;
   void reset() override;
 
-  // these methods are specific to this implementation
-  // they are not declared or implemented by the base CBUS class
   //void setNumBuffers(byte num_rx_buffers, byte _num_tx_buffers = 2);
   void setPins(byte tx_pin, byte rx_pin);
+  void setPIO(byte pioNum);
   void printStatus(void);
   void notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *amsg);
 
@@ -60,6 +59,7 @@ private:
   unsigned int _numMsgsSent, _numMsgsRcvd;
   byte _num_rx_buffers, _num_tx_buffers;
   byte _gpio_tx, _gpio_rx;
+  byte _pioNum = 0;
 
   CircularBuffer<CANFrame> rx_buffer;
   CircularBuffer<CANFrame> tx_buffer;  // Not currently used

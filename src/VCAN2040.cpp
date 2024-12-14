@@ -32,6 +32,11 @@ VCAN2040::VCAN2040(byte rx_qsize, byte tx_qsize)
   vcan2040p = this;
 }
 
+void VCAN2040::setPIO(byte pioNum)
+{
+  _pioNum = pioNum;
+}
+
 VCAN2040::~VCAN2040()
 {}
 
@@ -51,7 +56,9 @@ bool VCAN2040::begin() //bool poll, SPIClassRP2040 spi)
 //  (void)(spi);
 //  (void)poll;
 
-  acan2040 = new ACAN2040(0, _gpio_tx, _gpio_rx, CANBITRATE, F_CPU, cb);
+  _numMsgsSent = 0;
+  _numMsgsRcvd = 0;
+  acan2040 = new ACAN2040(_pioNum, _gpio_tx, _gpio_rx, CANBITRATE, F_CPU, cb);
   acan2040->begin();
   return true;
 }
@@ -60,7 +67,7 @@ bool VCAN2040::begin() //bool poll, SPIClassRP2040 spi)
 /// check if a message is available in the buffer.
 //
 bool VCAN2040::available()
-{
+{  
   return rx_buffer.available();
 }
 
@@ -70,6 +77,8 @@ bool VCAN2040::available()
 
 CANFrame VCAN2040::getNextCanFrame(void)
 {
+//unsigned int x = rx_buffer.getHighWaterMark();
+//DEBUG_SERIAL << F("> HWM: ") << x << endl;
   ++_numMsgsRcvd;
   return rx_buffer.pop(); 
 }
@@ -98,6 +107,7 @@ void VCAN2040::notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg
     break;
 
   case CAN2040_NOTIFY_TX:
+    //sendFrames--;
     //Serial.printf("acan2040 cb: message sent ok\n");
     break;
   case CAN2040_NOTIFY_ERROR:
@@ -118,6 +128,8 @@ bool VCAN2040::sendCanFrame(CANFrame *frame)
 {
   struct can2040_msg msg;
   
+  //sendFrames++;
+  
   uint32_t timeRef = micros();
   uint32_t waitTime = 0;
   while (!acan2040->ok_to_send())
@@ -132,8 +144,8 @@ bool VCAN2040::sendCanFrame(CANFrame *frame)
       return false;
     }
   }
-  //DEBUG_SERIAL << F("vcan2040> Wait Time = ") << waitTime << F(" usecs") << endl;
-  msg.id - frame->id;
+  //DEBUG_SERIAL << F("vcan2040> Send Frames waiting = ") << sendFrames << F(". Wait Time = ") << waitTime << F(" usecs") << endl;
+  msg.id = frame->id;
   
   if (frame->rtr)
     msg.id |= 0x40000000;
@@ -147,6 +159,7 @@ bool VCAN2040::sendCanFrame(CANFrame *frame)
   if (acan2040->send_message(&msg))
   {
     //Serial.printf("vcan2040> ok\n");
+    ++_numMsgsSent;
     return true;
   } else {
     //Serial.printf("vcan2040> error sending message\n");
