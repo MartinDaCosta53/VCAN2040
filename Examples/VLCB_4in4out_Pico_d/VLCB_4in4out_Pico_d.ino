@@ -82,13 +82,13 @@
 #include <Parameters.h>             // VLCB parameters
 #include <vlcbdefs.hpp>               // VLCB constants
 #include <LEDUserInterface.h>
-#include "MinimumNodeService.h"
-#include "CanService.h"
+#include "MinimumNodeServiceWithDiagnostics.h"
+#include "CanServiceWithDiagnostics.h"
 #include "NodeVariableService.h"
-#include "EventConsumerService.h"
-#include "EventProducerService.h"
+#include "EventConsumerServiceWithDiagnostics.h"
+#include "EventProducerServiceWithDiagnostics.h"
 #include "ConsumeOwnEventsService.h"
-#include "EventTeachingService.h"
+#include "EventTeachingServiceWithDiagnostics.h"
 #include "SerialUserInterface.h"
 
 // Module library header files
@@ -99,7 +99,7 @@ const byte VER_MAJ = 1;          // code major version
 const char VER_MIN = 'a';        // code minor version
 const byte VER_BETA = 0;         // code beta sub-version
 const byte MANUFACTURER = MANU_DEV;   // Module Manufacturer set to Development
-const byte MODULE_ID = 82;       // CBUS module type
+const byte MODULE_ID = 82;       // VLCB module type
 
 const byte LED_GRN = 14;         // VLCB green Unitialised LED pin
 const byte LED_YLW = 15;         // VLCB yellow Normal LED pin
@@ -107,16 +107,16 @@ const byte SWITCH0 = 13;         // VLCB push button switch pin
 
 // Controller objects
 VLCB::Configuration modconfig;               // configuration object
-VLCB::VCAN2040 vcan2040 (16,4);                  // CAN transport object
+VLCB::VCAN2040 vcan2040; // (16,4);                  // CAN transport object
 VLCB::LEDUserInterface ledUserInterface(LED_GRN, LED_YLW, SWITCH0);
 VLCB::SerialUserInterface serialUserInterface(&vcan2040);
-VLCB::MinimumNodeService mnService;
-VLCB::CanService canService(&vcan2040);
+VLCB::MinimumNodeServiceWithDiagnostics mnService;
+VLCB::CanServiceWithDiagnostics canService(&vcan2040);
 VLCB::NodeVariableService nvService;
 VLCB::ConsumeOwnEventsService coeService;
-VLCB::EventConsumerService ecService;
-VLCB::EventTeachingService etService;
-VLCB::EventProducerService epService;
+VLCB::EventConsumerServiceWithDiagnostics ecService;
+VLCB::EventTeachingServiceWithDiagnostics etService;
+VLCB::EventProducerServiceWithDiagnostics epService;
 VLCB::Controller controller(&modconfig,
                             {&mnService, &ledUserInterface, &serialUserInterface, &canService, &nvService, &ecService, &epService, &etService, &coeService}); // Controller object
 
@@ -135,10 +135,11 @@ const byte NUM_SWITCHES = sizeof(SWITCH) / sizeof(SWITCH[0]);
 // module objects
 Bounce moduleSwitch[NUM_SWITCHES];  //  switch as input
 LEDControl moduleLED[NUM_LEDS];     //  LED as output
-byte switchState[NUM_SWITCHES];
+bool state[NUM_SWITCHES];
 
 // forward function declarations
 void eventhandler(byte, const VLCB::VlcbMessage *);
+void requesthandler(byte, const VLCB::VlcbMessage *);
 void printConfig();
 void processSwitches();
 
@@ -147,10 +148,8 @@ void processSwitches();
 //
 void setupVLCB() {
   // set config layout parameters
-  modconfig.EE_NVS_START = 10;
   modconfig.EE_NUM_NVS = NUM_SWITCHES;
-  modconfig.EE_EVENTS_START = 50;
-  modconfig.EE_MAX_EVENTS = 64;
+  modconfig.EE_MAX_EVENTS = 20;
   modconfig.EE_PRODUCED_EVENTS = NUM_SWITCHES;
   modconfig.EE_NUM_EVS = 1 + NUM_LEDS;  
 
@@ -159,9 +158,6 @@ void setupVLCB() {
 
   Serial << F("> mode = ") << ((modconfig.currentMode) ? "Normal" : "Uninitialised") << F(", CANID = ") << modconfig.CANID;
   Serial << F(", NN = ") << modconfig.nodeNum << endl;
-
-  // show code version and copyright notice
-  printConfig();
 
   // set module parameters
   VLCB::Parameters params(modconfig);
@@ -181,13 +177,15 @@ void setupVLCB() {
   }
 
   // register our VLCB event handler, to receive event messages of learned events
-  ecService.setEventHandler(eventhandler);
+  ecService.setEventHandler(loadrcvdmess);
+  epService.setRequestEventHandler(loadrcvdmess);
 
   // set Controller LEDs to indicate mode
   controller.indicateMode(modconfig.currentMode);
 
   // configure and start CAN bus and VLCB message processing
   //vcan2040.setNumBuffers(16, 4);  // more buffers = more memory used, fewer = less
+  //vcan2040.setPio(0);             // PIO 0 is the default so this line commented out.  Alternative is value of 1
   vcan2040.setPins(1, 0);         // select pins for CAN Tx & Rx
 
   if (!vcan2040.begin()) {
@@ -209,7 +207,7 @@ void setupModule()
   {
     moduleSwitch[i].attach(SWITCH[i], INPUT_PULLUP);
     moduleSwitch[i].interval(5);
-    switchState[i] = false;
+    state[i] = false;
   }
 
   // configure the module LEDs
@@ -231,46 +229,34 @@ void setup()
   // show code version and copyright notice
   printConfig();
 
-  setupVLCB();
-
-  // end of setup
-  DEBUG_PRINT(get_core_num() << F("> VLCB ready"));
-//  delay(20);
-}
-
-void setup1()
-{
-  delay(2010);
   setupModule();
 
   // end of setup
   DEBUG_PRINT(get_core_num() << F("> Module ready"));
-//  delay(25);
+  // give core 1 the go ahead
+  rp2040.fifo.push(0);
+}
+
+void setup1()
+{
+  // wait for go ahead from core 0
+  rp2040.fifo.pop();
+
+  setupVLCB();
+
+  // end of setup
+  DEBUG_PRINT(get_core_num() << F("> VLCB ready"));
+
 }
 
 void loop()
-{
-  // do VLCB message processing
-  controller.process();
-
-  if (rp2040.fifo.available() == 2)
-  {
-    uint8_t _state = (uint8_t)rp2040.fifo.pop();
-    uint16_t sendData = (uint16_t)rp2040.fifo.pop();
-    epService.sendEvent(_state, sendData);
-  }
-
-// end of loop0()
-}
-
-void loop1()
 {
   if (rp2040.fifo.available() > 0)
   {
     byte msgLen = rp2040.fifo.pop();
     // Ensure Core 0 has loaded complete message into FIFO
-     while((msgLen + 1) != rp2040.fifo.available()){
-  }
+    while((msgLen + 1) != rp2040.fifo.available())
+    {}
     receivedData(msgLen);  // Action FIFO contents
   }
 
@@ -282,6 +268,30 @@ void loop1()
 
   // test for switch input
   processSwitches();
+
+// end of loop0()
+}
+
+void loop1()
+{
+  // do VLCB message processing
+  controller.process();
+
+  if (rp2040.fifo.available() == 3)
+  {
+    uint8_t event = (uint8_t)rp2040.fifo.pop();
+    uint8_t _state = (uint8_t)rp2040.fifo.pop();
+    uint16_t sendData = (uint16_t)rp2040.fifo.pop();
+    
+    if (event)
+    {
+      epService.sendEvent(_state, sendData);
+    }
+    else
+    {
+      epService.sendEventResponse(_state, sendData);
+    }
+  }
 
 // end of loop1()
 }
@@ -296,18 +306,19 @@ void processSwitches(void)
     {
       byte nv = i + 1;
       byte nvval = modconfig.readNV(nv);
-      bool state;
       byte swNum = i + 1;
+      bool event = true;
 
-      DEBUG_PRINT(get_core_num() << F(" sk> Button ") << i << F(" state change detected ") << nvval);     
+      // DEBUG_PRINT(get_core_num() << F(" sk> Button ") << i << F(" state change detected ") << nvval);     
 
       switch (nvval)
       {
         case 1:
           // ON and OFF
-           state = (moduleSwitch[i].fell());
-          DEBUG_PRINT(get_core_num() << F("sk> Button ") << i << (moduleSwitch[i].fell() ? F(" pressed, send state: ") : F(" released, send state: ")) << state);
-          rp2040.fifo.push(state);
+          state[i] = (moduleSwitch[i].fell());
+          DEBUG_PRINT(get_core_num() << F("sk> Button ") << i << (state[i] ? F(" pressed, send state: ") : F(" released, send state: ")) << state[i]);
+          rp2040.fifo.push(event);
+          rp2040.fifo.push(state[i]);
           rp2040.fifo.push(swNum);
           
           break;
@@ -316,9 +327,10 @@ void processSwitches(void)
           // Only ON
           if (moduleSwitch[i].fell())
           {
-            state = true;
-            DEBUG_PRINT(get_core_num() << F("sk> Button ") << i << F(" pressed, send state: ") << state);
-            rp2040.fifo.push(state);
+            state[i] = true;
+            DEBUG_PRINT(get_core_num() << F("sk> Button ") << i << F(" pressed, send state: ") << state[i]);
+            rp2040.fifo.push(event);
+            rp2040.fifo.push(state[i]);
             rp2040.fifo.push(swNum);
           }
           break;
@@ -327,9 +339,10 @@ void processSwitches(void)
           // Only OFF
           if (moduleSwitch[i].fell())
           {
-            state = false;
-            DEBUG_PRINT(get_core_num() << F("> Button ") << i << F(" pressed, send 0x") << state);
-            rp2040.fifo.push(state);
+            state[i] = false;
+            DEBUG_PRINT(get_core_num() << F("> Button ") << i << F(" pressed, send 0x") << state[i]);
+            rp2040.fifo.push(event);
+            rp2040.fifo.push(state[i]);
             rp2040.fifo.push(swNum);
           }
           break;
@@ -338,10 +351,11 @@ void processSwitches(void)
           // Toggle button
           if (moduleSwitch[i].fell())
           {
-            switchState[i] = !switchState[i];
-            state = switchState[i];
-            DEBUG_PRINT(get_core_num() << F("> Button ") << i << (moduleSwitch[i].fell() ? F(" pressed, send state: ") : F(" released, send state")) << state);
-            rp2040.fifo.push(state);
+            state[i] = !state[i];
+            
+            DEBUG_PRINT(get_core_num() << F("> Button ") << i << (state[i] ? F(" pressed, send state: ") : F(" released, send state: ")) << state[i]);
+            rp2040.fifo.push(event);
+            rp2040.fifo.push(state[i]);
             rp2040.fifo.push(swNum);
           }
           break;
@@ -357,7 +371,8 @@ void processSwitches(void)
 //
 /// called from the VLCB library when a learned event is received
 //
-void eventhandler(byte index, const VLCB::VlcbMessage *msg)
+
+void loadrcvdmess(byte index, const VLCB::VlcbMessage *msg)
 {
   rp2040.fifo.push(msg->len);
   rp2040.fifo.push(index);
@@ -365,8 +380,8 @@ void eventhandler(byte index, const VLCB::VlcbMessage *msg)
   {
     rp2040.fifo.push(msg->data[n]);
   }
-  DEBUG_PRINT(get_core_num() << F("> event handler put: index = ") << index << F(", opcode = 0x") << _HEX(msg->data[0]));
-  DEBUG_PRINT(get_core_num() << F("> event handler put: length = ") << msg->len);
+ // DEBUG_PRINT(get_core_num() << F("> received message put: index = ") << index << F(", opcode = 0x") << _HEX(msg->data[0]));
+ // DEBUG_PRINT(get_core_num() << F("> received message put: length = ") << msg->len);
 }
 
 void receivedData(byte length)
@@ -380,9 +395,9 @@ void receivedData(byte length)
 
   byte opc = rcvdData[0];
   delay(50);
-  DEBUG_PRINT(get_core_num() << F("> event handler popped: index = ") << index << F(", opcode = 0x") << _HEX(rcvdData[0]));
-  DEBUG_PRINT(get_core_num() << F("> event handler popped: length = ") << length);
-
+ // DEBUG_PRINT(get_core_num() << F("> received data popped: index = ") << index << F(", opcode = 0x") << _HEX(rcvdData[0]));
+ // DEBUG_PRINT(get_core_num() << F("> received data popped: length = ") << length);
+/*
 #if DEBUG
   unsigned int node_number = (rcvdData[1] << 8) + rcvdData[2];
   unsigned int event_number = (rcvdData[3] << 8) + rcvdData[4];
@@ -390,7 +405,7 @@ void receivedData(byte length)
 
   DEBUG_PRINT(get_core_num() << F("> NN = ") << node_number << F(", EN = ") << event_number);
   DEBUG_PRINT(get_core_num() << F("> op_code = 0x") << _HEX(opc));
-
+*/
   switch (opc) {
     case OPC_ACON:
     case OPC_ASON:
@@ -399,7 +414,8 @@ void receivedData(byte length)
         byte ev = i + 2;
         byte evval = modconfig.getEventEVval(index, ev);
 
-        switch (evval) {
+        switch (evval) 
+        {
           case 1:
             moduleLED[i].on();
             break;
@@ -420,7 +436,8 @@ void receivedData(byte length)
 
     case OPC_ACOF:
     case OPC_ASOF:
-      for (byte i = 0; i < NUM_LEDS; i++) {
+      for (byte i = 0; i < NUM_LEDS; i++) 
+      {
         byte ev = i + 2;
         byte evval = modconfig.getEventEVval(index, ev);
 
@@ -428,6 +445,16 @@ void receivedData(byte length)
           moduleLED[i].off();
         }
       }
+      break;
+
+    case OPC_AREQ:
+    case OPC_ASRQ:
+      bool event = false;
+      byte evval = modconfig.getEventEVval(index, 1) - 1;
+      DEBUG_PRINT(get_core_num() << F("> Handling request op =  ") << _HEX(opc) << F(", request input = ") << evval << F(", state = ") << state[evval]);
+      rp2040.fifo.push(event);
+      rp2040.fifo.push(state[evval]);
+      rp2040.fifo.push(index);
       break;
   }
 }
