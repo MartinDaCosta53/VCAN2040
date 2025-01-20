@@ -51,6 +51,10 @@ public:
   virtual unsigned int transmitCounter()override { return _numMsgsSent; }
   virtual unsigned int receiveErrorCounter()override { return 0; }
   virtual unsigned int transmitErrorCounter()override { return 0; }
+  virtual unsigned int receiveBufferUsage() override { return 0; };
+  virtual unsigned int transmitBufferUsage() override { return 0; };
+  virtual unsigned int receiveBufferPeak() override { return 0; };
+  virtual unsigned int transmitBufferPeak() override { return 0; };
   virtual unsigned int errorStatus()override { return 0; }
 
   ACAN2040 *acan2040;   // pointer to CAN object so user code can access its members
