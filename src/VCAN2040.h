@@ -9,7 +9,7 @@
 
 #include <Controller.h>
 #include <CanTransport.h>
-#include <ACAN2040.h>           // ACAN2040 library
+#include "ACAN2040.h"           // ACAN2040 library
 #include <CircularBuffer.h>
 
 namespace VLCB
@@ -50,13 +50,21 @@ public:
   virtual unsigned int receiveCounter()override { return _numMsgsRcvd; }
   virtual unsigned int transmitCounter()override { return _numMsgsSent; }
   virtual unsigned int receiveErrorCounter()override { return 0; }
+<<<<<<< HEAD
+  virtual unsigned int transmitErrorCounter()override { return _numSendErr; }
+=======
   virtual unsigned int transmitErrorCounter()override { return 0; }
+>>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
+  virtual unsigned int receiveBufferUsage() override { return 0; };
+  virtual unsigned int transmitBufferUsage() override { return 0; };
+  virtual unsigned int receiveBufferPeak() override { return 0; };
+  virtual unsigned int transmitBufferPeak() override { return 0; };
   virtual unsigned int errorStatus()override { return 0; }
 
   ACAN2040 *acan2040;   // pointer to CAN object so user code can access its members
 
 private:
-  unsigned int _numMsgsSent, _numMsgsRcvd;
+  unsigned int _numMsgsSent, _numMsgsRcvd, _numSendErr;
   byte _num_rx_buffers, _num_tx_buffers;
   byte _gpio_tx, _gpio_rx;
   byte _pioNum = 0;

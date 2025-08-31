@@ -7,7 +7,7 @@
 // 3rd party libraries
 #include <Streaming.h>
 
-// VLCB MCP2515 library
+
 #include <VCAN2040.h>
 
 namespace VLCB
@@ -58,6 +58,7 @@ bool VCAN2040::begin() //bool poll, SPIClassRP2040 spi)
 
   _numMsgsSent = 0;
   _numMsgsRcvd = 0;
+  _numSendErr = 0;
   acan2040 = new ACAN2040(_pioNum, _gpio_tx, _gpio_rx, CANBITRATE, F_CPU, cb);
   acan2040->begin();
   return true;
@@ -163,6 +164,7 @@ bool VCAN2040::sendCanFrame(CANFrame *frame)
     return true;
   } else {
     //Serial.printf("vcan2040> error sending message\n");
+    ++_numSendErr;
     return false;
   }  
 }
