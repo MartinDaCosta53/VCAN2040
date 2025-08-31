@@ -177,11 +177,14 @@ void setupVLCB()
   // set config layout parameters
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   VLCB::setNumNodeVariables(NUM_SWITCHES);
   VLCB::setMaxEvents(20);
   VLCB::setNumProducedEvents(NUM_SWITCHES);
   VLCB::setNumEventVariables(1 + NUM_LEDS);
 =======
+=======
+>>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
 =======
 >>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
   modconfig.EE_NUM_NVS = NUM_SWITCHES;
@@ -195,6 +198,9 @@ void setupVLCB()
   Serial << F("> mode = ") << ((modconfig.currentMode) ? "Normal" : "Uninitialised") << F(", CANID = ") << modconfig.CANID;
   Serial << F(", NN = ") << modconfig.nodeNum << endl;
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
+=======
 >>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
 =======
 >>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
@@ -211,7 +217,10 @@ void setupVLCB()
   epService.setRequestEventHandler(loadrcvdmess);
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
 =======
 >>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
 
@@ -292,10 +301,16 @@ void setup1()
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   DEBUG_PRINT(get_core_num() << F("> VLCB ready"));
   digitalWrite(LED_BUILTIN, LOW);
 
   // end of setup
+=======
+  // end of setup
+  DEBUG_PRINT(get_core_num() << F("> VLCB ready"));
+
+>>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
 =======
   // end of setup
   DEBUG_PRINT(get_core_num() << F("> VLCB ready"));
@@ -336,7 +351,11 @@ void loop1()
   // do VLCB message processing
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   VLCB::process();
+=======
+  controller.process();
+>>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
 =======
   controller.process();
 >>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
@@ -377,6 +396,9 @@ void processSwitches(void)
 =======
       byte nvval = modconfig.readNV(nv);
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
+=======
 >>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
 =======
 >>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
@@ -526,7 +548,11 @@ void receivedData(byte length)
       bool event = false;
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       byte evval = VLCB::getEventEVval(index, 1) - 1;
+=======
+      byte evval = modconfig.getEventEVval(index, 1) - 1;
+>>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
 =======
       byte evval = modconfig.getEventEVval(index, 1) - 1;
 >>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2

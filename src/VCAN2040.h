@@ -54,6 +54,9 @@ public:
   virtual unsigned int transmitErrorCounter()override { return _numSendErr; }
 =======
   virtual unsigned int transmitErrorCounter()override { return 0; }
+<<<<<<< HEAD
+>>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
+=======
 >>>>>>> 4f8ef86a687c152d7e1e246fb4015a51268a9df2
   virtual unsigned int receiveBufferUsage() override { return 0; };
   virtual unsigned int transmitBufferUsage() override { return 0; };
