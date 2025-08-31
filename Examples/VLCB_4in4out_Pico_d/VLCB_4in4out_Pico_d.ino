@@ -2,22 +2,16 @@
 // Version for use with Raspberry Pi Pico with software CAN Controller.
 // Uses both cores of the RP2040.
 
-
 /*
    Copyright (C) 2023 Martin Da Costa
-  //  This file is part of VLCB-Arduino project on https://github.com/SvenRosvall/VLCB-Arduino
-  //  Licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
-  //  The full licence can be found at: http://creativecommons.org/licenses/by-nc-sa/4.0
+  This file is part of VLCB-Arduino project on https://github.com/SvenRosvall/VLCB-Arduino
+  Licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
+  The full licence can be found at: http://creativecommons.org/licenses/by-nc-sa/4.0
 
-*/
+  3rd party libraries needed for compilation:
 
-/*
-      3rd party libraries needed for compilation:
-
-      Streaming   -- C++ stream style output, v5, (http://arduiniana.org/libraries/streaming/)
-      ACAN2040    -- library to support Pico PIO CAN controller implementation
-      CBUSSwitch  -- library access required by CBUS and CBUS Config
-      CBUSLED     -- library access required by CBUS and CBUS Config
+  Streaming   -- C++ stream style output, v5, (http://arduiniana.org/libraries/streaming/)
+  ACAN2040    -- library to support Pico PIO CAN controller implementation
 */
 ///////////////////////////////////////////////////////////////////////////////////
 // Pin Use map:
@@ -76,23 +70,17 @@
 #include <Bounce2.h>
 
 // VLCB library header files
-#include <Controller.h>                   // Controller class
+#include <VLCB.h>                   // Controller class
 #include <VCAN2040.h>               // CAN controller
-#include <Configuration.h>             // module configuration
-#include <Parameters.h>             // VLCB parameters
-#include <vlcbdefs.hpp>               // VLCB constants
-#include <LEDUserInterface.h>
-#include "MinimumNodeServiceWithDiagnostics.h"
-#include "CanServiceWithDiagnostics.h"
-#include "NodeVariableService.h"
-#include "EventConsumerServiceWithDiagnostics.h"
-#include "EventProducerServiceWithDiagnostics.h"
-#include "ConsumeOwnEventsService.h"
-#include "EventTeachingServiceWithDiagnostics.h"
-#include "SerialUserInterface.h"
 
 // Module library header files
 #include "LEDControl.h"
+
+// forward function declarations
+void eventhandler(byte, const VLCB::VlcbMessage *);
+void requesthandler(byte, const VLCB::VlcbMessage *);
+void printConfig();
+void processSwitches();
 
 // constants
 const byte VER_MAJ = 1;          // code major version
@@ -105,23 +93,8 @@ const byte LED_GRN = 14;         // VLCB green Unitialised LED pin
 const byte LED_YLW = 15;         // VLCB yellow Normal LED pin
 const byte SWITCH0 = 13;         // VLCB push button switch pin
 
-// Controller objects
-VLCB::Configuration modconfig;               // configuration object
-VLCB::VCAN2040 vcan2040; // (16,4);                  // CAN transport object
-VLCB::LEDUserInterface ledUserInterface(LED_GRN, LED_YLW, SWITCH0);
-VLCB::SerialUserInterface serialUserInterface(&vcan2040);
-VLCB::MinimumNodeServiceWithDiagnostics mnService;
-VLCB::CanServiceWithDiagnostics canService(&vcan2040);
-VLCB::NodeVariableService nvService;
-VLCB::ConsumeOwnEventsService coeService;
-VLCB::EventConsumerServiceWithDiagnostics ecService;
-VLCB::EventTeachingServiceWithDiagnostics etService;
-VLCB::EventProducerServiceWithDiagnostics epService;
-VLCB::Controller controller(&modconfig,
-                            {&mnService, &ledUserInterface, &serialUserInterface, &canService, &nvService, &ecService, &epService, &etService, &coeService}); // Controller object
-
 // module name, must be 7 characters, space padded.
-unsigned char mname[7] = { '4', 'I', 'N', '4', 'O', 'U', 'T' };
+char mname[] = "4IN4OUT";
 
 // Module objects
 const byte LED[] = { 22, 26, 27, 28 };     // LED pin connections through typ. 1K8 resistor
@@ -137,62 +110,65 @@ Bounce moduleSwitch[NUM_SWITCHES];  //  switch as input
 LEDControl moduleLED[NUM_LEDS];     //  LED as output
 bool state[NUM_SWITCHES];
 
-// forward function declarations
-void eventhandler(byte, const VLCB::VlcbMessage *);
-void requesthandler(byte, const VLCB::VlcbMessage *);
-void printConfig();
-void processSwitches();
+VLCB::VCAN2040 vcan2040 (16,4);                  // CAN transport object
+
+// Service objects
+VLCB::LEDUserInterface ledUserInterface(LED_GRN, LED_YLW, SWITCH0);
+VLCB::SerialUserInterface serialUserInterface;
+VLCB::MinimumNodeService mnService;
+VLCB::CanService canService(&vcan2040);
+VLCB::NodeVariableService nvService;
+VLCB::ConsumeOwnEventsService coeService;
+VLCB::EventConsumerService ecService;
+VLCB::EventTeachingService etService;
+VLCB::EventProducerService epService;
 
 //
 ///  setup VLCB - runs once at power on called from setup()
 //
-void setupVLCB() {
+void setupVLCB()
+{
+  VLCB::checkStartupAction(LED_GRN, LED_YLW, SWITCH0);
+
+  VLCB::setServices({
+    &mnService, &ledUserInterface, &serialUserInterface, &canService, &nvService,
+    &ecService, &epService, &etService, &coeService});
   // set config layout parameters
-  modconfig.EE_NUM_NVS = NUM_SWITCHES;
-  modconfig.EE_MAX_EVENTS = 20;
-  modconfig.EE_PRODUCED_EVENTS = NUM_SWITCHES;
-  modconfig.EE_NUM_EVS = 1 + NUM_LEDS;  
-
-  // initialise and load configuration
-  controller.begin();
-
-  Serial << F("> mode = ") << ((modconfig.currentMode) ? "Normal" : "Uninitialised") << F(", CANID = ") << modconfig.CANID;
-  Serial << F(", NN = ") << modconfig.nodeNum << endl;
+  VLCB::setNumNodeVariables(NUM_SWITCHES);
+  VLCB::setMaxEvents(20);
+  VLCB::setNumProducedEvents(NUM_SWITCHES);
+  VLCB::setNumEventVariables(1 + NUM_LEDS);
 
   // set module parameters
-  VLCB::Parameters params(modconfig);
-  params.setVersion(VER_MAJ, VER_MIN, VER_BETA);
-  params.setManufacturer(MANUFACTURER);
-  params.setModuleId(MODULE_ID);  
+  VLCB::setVersion(VER_MAJ, VER_MIN, VER_BETA);
+  VLCB::setModuleId(MANUFACTURER, MODULE_ID);
 
-  // assign to Controller
-  controller.setParams(params.getParams());
-  controller.setName(mname);
-
-  // module reset - if switch is depressed at startup
-  if (ledUserInterface.isButtonPressed())
-  {
-    Serial << F("> switch was pressed at startup") << endl;
-    modconfig.resetModule();
-  }
+  // set module name
+  VLCB::setName(mname);
 
   // register our VLCB event handler, to receive event messages of learned events
   ecService.setEventHandler(loadrcvdmess);
   epService.setRequestEventHandler(loadrcvdmess);
 
-  // set Controller LEDs to indicate mode
-  controller.indicateMode(modconfig.currentMode);
-
   // configure and start CAN bus and VLCB message processing
   //vcan2040.setNumBuffers(16, 4);  // more buffers = more memory used, fewer = less
   //vcan2040.setPio(0);             // PIO 0 is the default so this line commented out.  Alternative is value of 1
   vcan2040.setPins(1, 0);         // select pins for CAN Tx & Rx
-
   if (!vcan2040.begin()) {
     Serial << get_core_num() << F("> error starting VLCB") << endl;
   } else {
     Serial << get_core_num() << F("> VLCB started") << endl;
   }
+  
+  // initialise and load configuration
+  VLCB::begin();
+
+  Serial << F("> mode = (") << _HEX(VLCB::getCurrentMode()) << ") " << VLCB::Configuration::modeString(VLCB::getCurrentMode());
+  Serial << F(", CANID = ") << VLCB::getCANID();
+  Serial << F(", NN = ") << VLCB::getNodeNum() << endl;
+
+  // show code version and copyright notice
+  printConfig();
 }
 
 //
@@ -201,7 +177,6 @@ void setupVLCB() {
 
 void setupModule()
 {
-  unsigned int nodeNum = modconfig.nodeNum;
   // configure the module switches, active low
   for (byte i = 0; i < NUM_SWITCHES; i++)
   {
@@ -223,6 +198,8 @@ void setupModule()
 void setup() 
 {
   Serial.begin(115200);
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
   delay(2000);
   Serial << endl << get_core_num() << F("> ** VLCB 4 in 4 out Pico Dual Core ** ") << __FILE__ << endl;
 
@@ -244,9 +221,10 @@ void setup1()
 
   setupVLCB();
 
-  // end of setup
   DEBUG_PRINT(get_core_num() << F("> VLCB ready"));
+  digitalWrite(LED_BUILTIN, LOW);
 
+  // end of setup
 }
 
 void loop()
@@ -275,7 +253,7 @@ void loop()
 void loop1()
 {
   // do VLCB message processing
-  controller.process();
+  VLCB::process();
 
   if (rp2040.fifo.available() == 3)
   {
@@ -305,7 +283,7 @@ void processSwitches(void)
     if (moduleSwitch[i].changed())
     {
       byte nv = i + 1;
-      byte nvval = modconfig.readNV(nv);
+      byte nvval = VLCB::readNV(nv);
       byte swNum = i + 1;
       bool event = true;
 
@@ -412,7 +390,7 @@ void receivedData(byte length)
       for (byte i = 0; i < NUM_LEDS; i++)
       {
         byte ev = i + 2;
-        byte evval = modconfig.getEventEVval(index, ev);
+        byte evval = VLCB::getEventEVval(index, ev);
 
         switch (evval) 
         {
@@ -439,7 +417,7 @@ void receivedData(byte length)
       for (byte i = 0; i < NUM_LEDS; i++) 
       {
         byte ev = i + 2;
-        byte evval = modconfig.getEventEVval(index, ev);
+        byte evval = VLCB::getEventEVval(index, ev);
 
         if (evval > 0) {
           moduleLED[i].off();
@@ -450,7 +428,7 @@ void receivedData(byte length)
     case OPC_AREQ:
     case OPC_ASRQ:
       bool event = false;
-      byte evval = modconfig.getEventEVval(index, 1) - 1;
+      byte evval = VLCB::getEventEVval(index, 1) - 1;
       DEBUG_PRINT(get_core_num() << F("> Handling request op =  ") << _HEX(opc) << F(", request input = ") << evval << F(", state = ") << state[evval]);
       rp2040.fifo.push(event);
       rp2040.fifo.push(state[evval]);
