@@ -57,7 +57,7 @@
 // Pin 40   VBUS
 //////////////////////////////////////////////////////////////////////////
 
-#define DEBUG 0  // set to 0 for no serial debug
+#define DEBUG 1  // set to 0 for no serial debug
 
 #if DEBUG
 #define DEBUG_PRINT(S) Serial << S << endl
@@ -67,14 +67,10 @@
 
 // 3rd party libraries
 #include <Streaming.h>
-#include <Bounce2.h>
 
 // VLCB library header files
 #include <VLCB.h>                   // Controller class
 #include <VCAN2040.h>               // CAN controller
-
-// Module library header files
-#include "LEDControl.h"
 
 // forward function declarations
 void eventhandler(byte, const VLCB::VlcbMessage *);
@@ -83,7 +79,7 @@ void processSwitches();
 
 // constants
 const byte VER_MAJ = 1;               // code major version
-const char VER_MIN = 'a';             // code minor version
+const char VER_MIN = 'b';             // code minor version
 const byte VER_BETA = 0;              // code beta sub-version
 const byte MANUFACTURER = MANU_DEV;   // Module Manufacturer set to Development
 const byte MODULE_ID = 82;            // CBUS module type
@@ -105,8 +101,8 @@ const byte NUM_LEDS = sizeof(LED) / sizeof(LED[0]);
 const byte NUM_SWITCHES = sizeof(SWITCH) / sizeof(SWITCH[0]);
 
 // module objects
-Bounce moduleSwitch[NUM_SWITCHES];  //  switch as input
-LEDControl moduleLED[NUM_LEDS];     //  LED as output
+VLCB::Switch moduleSwitch[NUM_SWITCHES];  //  switch as input
+VLCB::LED moduleLED[NUM_LEDS];     //  LED as output
 byte state[NUM_SWITCHES];
 
 VLCB::VCAN2040 vcan2040 (16,4);                  // CAN transport object
@@ -134,7 +130,6 @@ void setupVLCB()
     &ecService, &epService, &etService, &coeService});
   // set config layout parameters
   VLCB::setNumNodeVariables(NUM_SWITCHES);
-  VLCB::setEventsStart(50);
   VLCB::setMaxEvents(64);
   VLCB::setNumProducedEvents(NUM_SWITCHES);
   VLCB::setNumEventVariables(1 + NUM_LEDS);
@@ -181,16 +176,14 @@ void setupModule()
   // configure the module switches, active low
   for (byte i = 0; i < NUM_SWITCHES; i++)
   {
-    moduleSwitch[i].attach(SWITCH[i], INPUT_PULLUP);
-    moduleSwitch[i].interval(5);
+    moduleSwitch[i].setPin(SWITCH[i], INPUT_PULLUP);
     state[i] = false;
   }
 
   // configure the module LEDs
   for (byte i = 0; i < NUM_LEDS; i++)
   {
-    moduleLED[i].setPin(LED[i], active);  //Second arguement sets 0 = active low, 1 = active high. Default if no second arguement is active high.
-    moduleLED[i].off();
+    moduleLED[i].setPin(LED[i], LOW);  //Second arguement sets 0 = active low, 1 = active high. Default if no second arguement is active high.
   }
 
   Serial << "> Module has " << NUM_LEDS << " LEDs and " << NUM_SWITCHES << " switches." << endl;
@@ -198,9 +191,10 @@ void setupModule()
 
 void setup()
 {
+  uint32_t stimer = millis();
   Serial.begin(115200);
-  delay(1000);
-  Serial << endl << endl << F("> ** VLCB 4 in 4 out Pico single core ** ") << __FILE__ << endl;
+  while (!Serial && millis() - stimer < 3000);
+  Serial << endl << F("> ** VLCB 4 in 4 out Pico single core ** ") << __FILE__ << endl;
 
   setupVLCB();
   setupModule();
@@ -230,8 +224,8 @@ void processSwitches(void)
 {
   for (byte i = 0; i < NUM_SWITCHES; i++)
   {
-    moduleSwitch[i].update();
-    if (moduleSwitch[i].changed())
+    moduleSwitch[i].run();
+    if (moduleSwitch[i].stateChanged())
     {
       byte nv = i + 1;
       byte nvval = VLCB::readNV(nv);
@@ -243,14 +237,14 @@ void processSwitches(void)
       {
         case 1:
           // ON and OFF
-          state[i] = (moduleSwitch[i].fell());
+          state[i] = (moduleSwitch[i].getState());
           DEBUG_PRINT(F("sk> Button ") << i << (state[i] ? F(" pressed, send state: ") : F(" released, send state: ")) << state[i]);
           epService.sendEvent(state[i], swNum);
           break;
 
         case 2:
           // Only ON
-          if (moduleSwitch[i].fell()) 
+          if (moduleSwitch[i].isPressed()) 
           {
             state[i] = true;
             DEBUG_PRINT(F("sk> Button ") << i << F(" pressed, send state: ") << state[i]);
@@ -260,7 +254,7 @@ void processSwitches(void)
 
         case 3:
           // Only OFF
-          if (moduleSwitch[i].fell())
+          if (moduleSwitch[i].isPressed())
           {
             state[i] = false;
             DEBUG_PRINT(F("sk> Button ") << i << F(" pressed, send state: ") << state[i]);
@@ -270,7 +264,7 @@ void processSwitches(void)
 
         case 4:
           // Toggle button
-          if (moduleSwitch[i].fell())
+          if (moduleSwitch[i].isPressed())
           {
             state[i] = !state[i];
             DEBUG_PRINT(F("sk> Button ") << i << (state[i] ? F(" pressed, send state: ") : F(" released, send state: ")) << state[i]);
@@ -318,11 +312,11 @@ void eventhandler(byte index, const VLCB::VlcbMessage *msg)
             break;
 
           case 2:
-            moduleLED[i].flash(500);
+            moduleLED[i].blink(500);
             break;
 
           case 3:
-            moduleLED[i].flash(250);
+            moduleLED[i].blink(250);
             break;
 
           default:
@@ -360,5 +354,5 @@ void printConfig(void) {
   Serial << F("> compiled on ") << __DATE__ << F(" at ") << __TIME__ << F(", compiler ver = ") << __cplusplus << endl;
 
   // copyright
-  Serial << F("> © Martin Da Costa (MERG M6237) 2024") << endl;
+  Serial << F("> © Martin Da Costa (MERG M6237) 2025") << endl;
 }
