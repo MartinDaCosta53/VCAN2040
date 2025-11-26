@@ -237,7 +237,7 @@ void processSwitches(void)
       {
         case 1:
           // ON and OFF
-          state[i] = (moduleSwitch[i].getState());
+          state[i] = (moduleSwitch[i].isPressed());
           DEBUG_PRINT(F("sk> Button ") << i << (state[i] ? F(" pressed, send state: ") : F(" released, send state: ")) << state[i]);
           epService.sendEvent(state[i], swNum);
           break;
