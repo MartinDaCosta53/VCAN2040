@@ -5,7 +5,7 @@
 #if PICO_RP2350
 #include "RP2350.h" // hw_set_bits
 #else
-#include "RP2040.h"
+#include "p.h"
 #endif
 
 #include "hardware/regs/dreq.h" // DREQ_PIO0_RX1

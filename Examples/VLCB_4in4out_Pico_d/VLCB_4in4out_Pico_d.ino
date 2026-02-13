@@ -57,10 +57,18 @@
 // Pin 40   VBUS
 //////////////////////////////////////////////////////////////////////////
 
+//////////////////////////////////////////////////////////////////////////
+// 
+// Node variables:
+//  NV1-4 - Behaviour of switch 1-4: 0) None 1) On/Off 2) On only 3) Off only 4) Toggle
+//
+// Event variables:
+//  EV1 - Produce event for switch N where N is EV1 value in the range 1-4. Must be unique.
+//  EV2-5 - Change LED 1-4: 0) No change 1) Normal 2) Slow blink 3) Fast blink
 #define DEBUG 1  // set to 0 for no serial debug
 
 #if DEBUG
-#define DEBUG_PRINT(S) Serial << S << endl
+#define DEBUG_PRINT(S) Serial << "Core " << get_core_num() << S << endl
 #else
 #define DEBUG_PRINT(S)
 #endif
@@ -74,12 +82,13 @@
 
 // forward function declarations
 void eventhandler(byte, const VLCB::VlcbMessage *);
+byte eventValidator(int nn, int en, byte evNum, byte evValue);
 void printConfig();
 void processSwitches();
 
 // constants
 const byte VER_MAJ = 1;               // code major version
-const char VER_MIN = 'b';             // code minor version
+const char VER_MIN = 'c';             // code minor version
 const byte VER_BETA = 0;              // code beta sub-version
 const byte MANUFACTURER = MANU_DEV;   // Module Manufacturer set to Development
 const byte MODULE_ID = 82;            // CBUS module type
@@ -131,7 +140,6 @@ void setupVLCB()
   // set config layout parameters
   VLCB::setNumNodeVariables(NUM_SWITCHES);
   VLCB::setMaxEvents(64);
-  VLCB::setNumProducedEvents(NUM_SWITCHES);
   VLCB::setNumEventVariables(1 + NUM_LEDS);
   
   // set module parameters
@@ -163,8 +171,6 @@ void setupVLCB()
   Serial << F(", CANID = ") << VLCB::getCANID();
   Serial << F(", NN = ") << VLCB::getNodeNum() << endl;
 
-  // show code version and copyright notice
-  printConfig();
 }
 
 //
@@ -256,7 +262,21 @@ void loop1()
     
     if (event)
     {
-      epService.sendEvent(_state, sendData);
+      byte eventIndex = VLCB::findExistingEventByEv(1, sendData);
+      if (!VLCB::isEventIndexValid(eventIndex))
+      {
+        DEBUG_PRINT(F(" sk> No event for this button."));
+        eventIndex = createEvent(VLCB::getNodeNum(), sendData);
+        if (!VLCB::isEventIndexValid(eventIndex))
+        {
+          DEBUG_PRINT(F(" sk> Could not create default event"));
+          // Could not create default event. Ignore it and don't send an event.
+        }
+         // Created a valid event, now set EV1 to the switch number.
+        VLCB::writeEventVariable(eventIndex, 1, sendData);
+        DEBUG_PRINT(F(" sk> Wrote event variable 1 value=") << sendData);
+      }
+      epService.sendEventAtIndex(_state, eventIndex);
     }
     else
     {
@@ -266,6 +286,9 @@ void loop1()
 
 // end of loop1()
 }
+
+/////////////////////////////////////////////////////////
+//Core 0 Functions
 
 void processSwitches(void)
 {
@@ -279,14 +302,14 @@ void processSwitches(void)
       byte swNum = i + 1;
       bool event = true;
 
-      DEBUG_PRINT(F("sk> Button ") << i << F(" state change detected. NV Value = ") << nvval);
+      DEBUG_PRINT(F(" sk> Button ") << i << F(" state change detected. NV Value = ") << nvval);
 
       switch (nvval)
       {
         case 1:
           // ON and OFF
           state[i] = (moduleSwitch[i].isPressed());
-          DEBUG_PRINT(F("sk> Button ") << i << (state[i] ? F(" pressed, send state: ") : F(" released, send state: ")) << state[i]);
+          DEBUG_PRINT(F(" sk> Button ") << i << (state[i] ? F(" pressed, send state: ") : F(" released, send state: ")) << state[i]);
           rp2040.fifo.push(event);
           rp2040.fifo.push(state[i]);
           rp2040.fifo.push(swNum);
@@ -297,7 +320,7 @@ void processSwitches(void)
           if (moduleSwitch[i].isPressed()) 
           {
             state[i] = true;
-            DEBUG_PRINT(F("sk> Button ") << i << F(" pressed, send state: ") << state[i]);
+            DEBUG_PRINT(F(" sk> Button ") << i << F(" pressed, send state: ") << state[i]);
             rp2040.fifo.push(event);
             rp2040.fifo.push(state[i]);
             rp2040.fifo.push(swNum);
@@ -309,7 +332,7 @@ void processSwitches(void)
           if (moduleSwitch[i].isPressed())
           {
             state[i] = false;
-            DEBUG_PRINT(F("sk> Button ") << i << F(" pressed, send state: ") << state[i]);
+            DEBUG_PRINT(F(" sk> Button ") << i << F(" pressed, send state: ") << state[i]);
             rp2040.fifo.push(event);
             rp2040.fifo.push(state[i]);
             rp2040.fifo.push(swNum);
@@ -321,7 +344,7 @@ void processSwitches(void)
           if (moduleSwitch[i].isPressed())
           {
             state[i] = !state[i];
-            DEBUG_PRINT(F("sk> Button ") << i << (state[i] ? F(" pressed, send state: ") : F(" released, send state: ")) << state[i]);
+            DEBUG_PRINT(F(" sk> Button ") << i << (state[i] ? F(" pressed, send state: ") : F(" released, send state: ")) << state[i]);
             rp2040.fifo.push(event);
             rp2040.fifo.push(state[i]);
             rp2040.fifo.push(swNum);
@@ -329,29 +352,12 @@ void processSwitches(void)
           break;
 
         default:
-          DEBUG_PRINT(F("sk> Button ") << i << F(" do nothing."));
+          DEBUG_PRINT(F(" sk> Button ") << i << F(" do nothing."));
           break;
       }
     }
   }
 }
-
-//
-/// called from the VLCB library when a learned event is received
-//
-
-void loadrcvdmess(byte index, const VLCB::VlcbMessage *msg)
-{
-  rp2040.fifo.push(msg->len);
-  rp2040.fifo.push(index);
-  for (byte n = 0; n < msg->len; n++)
-  {
-    rp2040.fifo.push(msg->data[n]);
-  }
- // DEBUG_PRINT(get_core_num() << F("> received message put: index = ") << index << F(", opcode = 0x") << _HEX(msg->data[0]));
- // DEBUG_PRINT(get_core_num() << F("> received message put: length = ") << msg->len);
-}
-
 
 void receivedData(byte length)
 {
@@ -364,27 +370,27 @@ void receivedData(byte length)
 
   byte opc = rcvdData[0];
   delay(50);
-  DEBUG_PRINT(get_core_num() << F("> received data popped: index = ") << index << F(", opcode = 0x") << _HEX(rcvdData[0]));
-  DEBUG_PRINT(get_core_num() << F("> received data popped: length = ") << length);
+  DEBUG_PRINT(F(" sk> received data popped: index = ") << index << F(", opcode = 0x") << _HEX(rcvdData[0]));
+  DEBUG_PRINT(F(" sk> received data popped: length = ") << length);
 
 #if DEBUG
   unsigned int node_number = (rcvdData[1] << 8) + rcvdData[2];
   unsigned int event_number = (rcvdData[3] << 8) + rcvdData[4];
 #endif
 
-  DEBUG_PRINT(get_core_num() << F("> NN = ") << node_number << F(", EN = ") << event_number);
-  DEBUG_PRINT(get_core_num() << F("> op_code = 0x") << _HEX(opc));
+  DEBUG_PRINT(F(" sk> NN = ") << node_number << F(", EN = ") << event_number);
+  DEBUG_PRINT(F(" sk> op_code = 0x") << _HEX(opc));
 
   switch (opc)
   {
     case OPC_ACON:
     case OPC_ASON:
-      DEBUG_PRINT(F("sk> case is opCode ON"));
+      DEBUG_PRINT(F(" k> case is opCode ON"));
       for (byte i = 0; i < NUM_LEDS; i++)
       {
         byte ev = i + 2;
         byte evval = VLCB::getEventEVval(index, ev);
-        //DEBUG_PRINT(F("sk> EV = ") << ev << (" Value = ") << evval);
+        //DEBUG_PRINT(F(" sk> EV = ") << ev << (" Value = ") << evval);
 
         switch (evval) 
         {
@@ -408,7 +414,7 @@ void receivedData(byte length)
 
     case OPC_ACOF:
     case OPC_ASOF:
-      DEBUG_PRINT(F("sk> case is opCode OFF"));
+      DEBUG_PRINT(F(" sk> case is opCode OFF"));
       for (byte i = 0; i < NUM_LEDS; i++)
       {
         byte ev = i + 2;
@@ -425,13 +431,101 @@ void receivedData(byte length)
     case OPC_ASRQ:
       bool event = false;
       byte evval = VLCB::getEventEVval(index, 1) - 1;
-      DEBUG_PRINT(get_core_num() << F("> Handling request op =  ") << _HEX(opc) << F(", request input = ") << evval << F(", state = ") << state[evval]);
+      DEBUG_PRINT(F(" sk> Handling request op =  ") << _HEX(opc) << F(", request input = ") << evval << F(", state = ") << state[evval]);
       rp2040.fifo.push(event);
       rp2040.fifo.push(state[evval]);
       rp2040.fifo.push(index);
       break;
   }
 }
+
+////////////////////////////////////////////////////////////////////
+//Core 1 Functions
+
+byte eventValidator(int nn, int en, byte evNum, byte evValue)
+{
+  // EV#1 is for produced events. It specifies which switch triggers this event.
+  // There can only be one event with EV#1 set to a specific switch.
+  if (evNum == 1)
+  {
+    // Search for an event where EV#1 has the same value.
+    byte index = VLCB::findExistingEventByEv(evNum, evValue);
+    if (VLCB::isEventIndexValid(index))
+    {
+      // Yes, one such event does exist.
+      return CMDERR_INV_EV_VALUE;
+    }
+  }
+  return GRSP_OK;
+}
+
+byte createEvent(unsigned int nn, byte preferredEN)
+{
+  DEBUG_PRINT(F(" sk> Will create event nn=") << nn << F(" en=") << preferredEN);
+  byte eventIndex = VLCB::findExistingEvent(nn, preferredEN);
+  if (VLCB::isEventIndexValid(eventIndex))
+  {
+    DEBUG_PRINT(F(" sk> Preferred event already exists. Try to find a free event number"));
+    // Find an unused EN
+    for (unsigned int en = 1 ; en < 65535 ; ++en)
+    {
+      DEBUG_PRINT(F(" sk> Trying en=") << en);
+      eventIndex = VLCB::findExistingEvent(nn, en);
+      if (!VLCB::isEventIndexValid(eventIndex))
+      {
+        DEBUG_PRINT(F(" sk> is free, create it."));
+        eventIndex = VLCB::findEmptyEventSpace();
+        if (VLCB::isEventIndexValid(eventIndex))
+        {
+          VLCB::createEventAtIndex(eventIndex, nn, en);
+          DEBUG_PRINT(F(" sk> Created event at index=") << eventIndex);
+          return eventIndex;
+        }
+        else
+        {
+          DEBUG_PRINT(F(" sk> No empty space for event. index=") << eventIndex);
+          return 0xFF;
+        }
+      }
+    }
+    DEBUG_PRINT(F(" sk> No free event number"));
+    return 0xFF;
+  }
+  else
+  {
+    DEBUG_PRINT(F(" sk> Preferred event does not exist."));
+    // Find an empty slot to create an event.
+    eventIndex = VLCB::findEmptyEventSpace();
+    if (VLCB::isEventIndexValid(eventIndex))
+    {
+      DEBUG_PRINT(F(" sk> Creating preferred event"));
+      VLCB::createEventAtIndex(eventIndex, nn, preferredEN);
+      return eventIndex;
+    }
+    else
+    {
+      DEBUG_PRINT(F(" sk> No empty space for event. index=") << eventIndex);
+      return 0xFF;
+    }
+  }
+}
+
+//
+/// called from the VLCB library when a learned event is received
+//
+
+void loadrcvdmess(byte index, const VLCB::VlcbMessage *msg)
+{
+  rp2040.fifo.push(msg->len);
+  rp2040.fifo.push(index);
+  for (byte n = 0; n < msg->len; n++)
+  {
+    rp2040.fifo.push(msg->data[n]);
+  }
+ DEBUG_PRINT(F(" sk> received message put: index = ") << index << F(", opcode = 0x") << _HEX(msg->data[0]));
+ DEBUG_PRINT(F(" sk> received message put: length = ") << msg->len);
+}
+
 
 void printConfig(void) {
   // code version
