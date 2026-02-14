@@ -146,15 +146,15 @@ bool VCAN2040::sendCanFrame(CANFrame *frame)
     }
   }
   //DEBUG_SERIAL << F("vcan2040> Send Frames waiting = ") << sendFrames << F(". Wait Time = ") << waitTime << F(" usecs") << endl;
-  msg.id = frame->id;
+  msg.id = frame->id;  
+  msg.dlc = frame->len;
   
   if (frame->rtr)
     msg.id |= 0x40000000;
 
   if (frame->ext)
     msg.id |= 0x80000000;
-  
-  msg.dlc = frame->len;
+
   memcpy(msg.data, frame->data, frame->len);
   
   if (acan2040->send_message(&msg))

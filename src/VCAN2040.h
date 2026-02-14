@@ -40,6 +40,7 @@ public:
   CANFrame getNextCanFrame() override;
   bool sendCanFrame(CANFrame * msg) override;
   void reset() override;
+  byte getHardwareType() override { return CAN_HW_RP2040_PIO; };
 
   //void setNumBuffers(byte num_rx_buffers, byte _num_tx_buffers = 2);
   void setPins(byte tx_pin, byte rx_pin);
