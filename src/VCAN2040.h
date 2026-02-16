@@ -54,16 +54,17 @@ public:
   virtual unsigned int transmitCounter()override { return _numMsgsSent; }
   virtual unsigned int receiveErrorCounter()override { return 0; }
   virtual unsigned int transmitErrorCounter()override { return _numSendErr; }
-  virtual unsigned int receiveBufferUsage() override { return 0; };
-  virtual unsigned int transmitBufferUsage() override { return 0; };
-  virtual unsigned int receiveBufferPeak() override { return 0; };
-  virtual unsigned int transmitBufferPeak() override { return 0; };
+  virtual unsigned int receiveBufferUsage() override { return _rxQueueUse; };
+  virtual unsigned int transmitBufferUsage() override { return _txQueueUse; };
+  virtual unsigned int receiveBufferPeak() override { return _rxQueuePeak; };
+  virtual unsigned int transmitBufferPeak() override { return _txQueuePeak; };
   virtual unsigned int errorStatus()override { return 0; }
 
   ACAN2040 *acan2040;   // pointer to CAN object so user code can access its members
+  queue_t tx_queue, rx_queue;
 
 private:
-  unsigned int _numMsgsSent, _numMsgsRcvd, _numSendErr;
+  unsigned int _numMsgsSent, _numMsgsRcvd, _numSendErr, _rxQueueUse, _rxQueuePeak, _txQueueUse, _txQueuePeak;
   unsigned int _num_rx_buffers, _num_tx_buffers;
   byte _gpio_tx, _gpio_rx;
   byte _pioNum = 0;
