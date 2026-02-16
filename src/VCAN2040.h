@@ -17,8 +17,10 @@ namespace VLCB
 
 // constants
 
-static const byte TX_QSIZE = 8;
-static const byte RX_QSIZE = 32;
+static const uint32_t tx_qsize = 16;
+static const uint32_t rx_qsize = 64;
+//static const byte TX_QSIZE = 8;
+//static const byte RX_QSIZE = 32;
 static const uint32_t CANBITRATE = 125000UL;                // 125Kb/s - fixed for CBUS
 
 
@@ -31,7 +33,7 @@ class VCAN2040 : public CanTransport
 {
 public:
 
-  VCAN2040(byte rx_qsize = RX_QSIZE, byte tx_qsize = TX_QSIZE);
+  VCAN2040();
   virtual ~VCAN2040();
 
   // these methods are declared virtual in the base class and must be implemented by the derived class
@@ -42,7 +44,7 @@ public:
   void reset() override;
   byte getHardwareType() override { return CAN_HW_RP2040_PIO; };
 
-  //void setNumBuffers(byte num_rx_buffers, byte _num_tx_buffers = 2);
+  void setNumBuffers(unsigned int num_rx_buffers, unsigned int num_tx_buffers);
   void setPins(byte tx_pin, byte rx_pin);
   void setPIO(byte pioNum);
   void printStatus(void);
@@ -62,12 +64,9 @@ public:
 
 private:
   unsigned int _numMsgsSent, _numMsgsRcvd, _numSendErr;
-  byte _num_rx_buffers, _num_tx_buffers;
+  unsigned int _num_rx_buffers, _num_tx_buffers;
   byte _gpio_tx, _gpio_rx;
   byte _pioNum = 0;
-
-  CircularBuffer<CANFrame> rx_buffer;
-  CircularBuffer<CANFrame> tx_buffer;  // Not currently used
 
 };
 }
