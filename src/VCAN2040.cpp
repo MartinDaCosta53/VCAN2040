@@ -58,8 +58,8 @@ bool VCAN2040::begin()
   _numMsgsSent = 0;
   _numMsgsRcvd = 0;
   _numSendErr = 0;
-  _rxQueuePeak = 0;
-  _txQueuePeak = 0;
+  _hwmRx = 0;
+  _hwmTx = 0;
   
   /// allocate tx and rx buffers - using Pico SDK queue API
 
@@ -88,11 +88,8 @@ bool VCAN2040::available()
   while (acan2040->ok_to_send() && queue_try_remove(&tx_queue, &tx_msg)) {
     acan2040->send_message(&tx_msg);
   }
-  _txQueueUse = queue_get_level(&tx_queue);
 
   /// check for new received messages
-  _rxQueueUse = queue_get_level(&rx_queue);
-
   return (!queue_is_empty(&rx_queue));
 }
 
@@ -136,9 +133,9 @@ void VCAN2040::notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg
     //Serial.printf("acan2040 cb: message received\n");
     ++_numMsgsRcvd;
     queue_try_add(&rx_queue, amsg);
-    if(queue_get_level(&rx_queue) > _rxQueuePeak)
+    if(queue_get_level(&rx_queue) > _hwmRx)
     {
-      _rxQueuePeak = queue_get_level(&rx_queue);
+      _hwmRx = queue_get_level(&rx_queue);
     }
     break;
 
@@ -186,9 +183,9 @@ bool VCAN2040::sendCanFrame(CANFrame *frame)
     return (acan2040->send_message(&msg));
   } else 
   {
-    if(queue_get_level(&tx_queue) > _txQueuePeak)
+    if(queue_get_level(&tx_queue) > _hwmTx)
     {
-      _txQueuePeak = queue_get_level(&tx_queue);
+      _hwmTx = queue_get_level(&tx_queue);
     }
     //Serial.printf("vcan2040> error sending message\n");
     return (queue_try_add(&tx_queue, &msg));
