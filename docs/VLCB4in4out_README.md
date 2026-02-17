@@ -63,7 +63,6 @@ associated with this example, the following third party libraries are required:
 Library | Purpose
 ---------------|-----------------
 Streaming.h  |*C++ stream style output, v5, (http://arduiniana.org/libraries/streaming/)*
-Bounce2.h    |*Debounce of switch inputs*
 ACAN2040.h   |*library to support the software CAN controller*
 
 ### Application Configuration
