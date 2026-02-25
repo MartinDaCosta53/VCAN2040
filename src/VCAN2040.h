@@ -10,7 +10,6 @@
 #include <Controller.h>
 #include <CanTransport.h>
 #include <ACAN2040.h>          // ACAN2040 library
-//#include <CircularBuffer.h>
 
 namespace VLCB
 {
