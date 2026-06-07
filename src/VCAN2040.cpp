@@ -39,9 +39,6 @@ void VCAN2040::setPIO(byte pioNum)
   _pioNum = pioNum;
 }
 
-VCAN2040::~VCAN2040()
-{}
-
 void VCAN2040::setPins(byte gpio_tx, byte gpio_rx)
 {
   _gpio_tx = gpio_tx;
@@ -68,8 +65,8 @@ bool VCAN2040::begin()
 
   /// initialise the can2040 CAN driver
 
-  acan2040 = new ACAN2040(_pioNum, _gpio_tx, _gpio_rx, CANBITRATE, F_CPU, cb);
-  acan2040->begin();
+  canp = new ACAN2040(_pioNum, _gpio_tx, _gpio_rx, CANBITRATE, F_CPU, cb);
+  canp->begin();
   return true;
 }
 
@@ -85,8 +82,8 @@ bool VCAN2040::available()
 
   /// attempt to drain down the tx buffer
 
-  while (acan2040->ok_to_send() && queue_try_remove(&tx_queue, &tx_msg)) {
-    acan2040->send_message(&tx_msg);
+  while (canp->ok_to_send() && queue_try_remove(&tx_queue, &tx_msg)) {
+    canp->send_message(&tx_msg);
   }
 
   /// check for new received messages
@@ -130,7 +127,7 @@ void VCAN2040::notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg
   switch (notify)
   {
   case CAN2040_NOTIFY_RX:
-    //Serial.printf("acan2040 cb: message received\n");
+    //Serial.printf("canp cb: message received\n");
     ++_numMsgsRcvd;
     queue_try_add(&rx_queue, amsg);
     if(queue_get_level(&rx_queue) > _hwmRx)
@@ -141,13 +138,13 @@ void VCAN2040::notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg
 
   case CAN2040_NOTIFY_TX:
     //sendFrames--;
-    //Serial.printf("acan2040 cb: message sent ok\n");
+    //Serial.printf("canp cb: message sent ok\n");
     break;
   case CAN2040_NOTIFY_ERROR:
-    Serial.printf("acan2040 cb: an error occurred\n");
+    Serial.printf("canp cb: an error occurred\n");
     break;
   default:
-    Serial.printf("acan2040 cb: unknown event type\n");
+    Serial.printf("canp cb: unknown event type\n");
     break;
   }
 
@@ -176,11 +173,11 @@ bool VCAN2040::sendCanFrame(CANFrame *frame)
 
   memcpy(msg.data, frame->data, frame->len);
   
-  if (acan2040->ok_to_send())
+  if (canp->ok_to_send())
   {
     //Serial.printf("vcan2040> ok\n");
     ++_numMsgsSent;
-    return (acan2040->send_message(&msg));
+    return (canp->send_message(&msg));
   } else 
   {
     if(queue_get_level(&tx_queue) > _hwmTx)
@@ -203,8 +200,8 @@ void VCAN2040::printStatus()
   /*
     DEBUG_SERIAL << F("> VLCB status:");
     DEBUG_SERIAL << F(" messages received = ") << _numMsgsRcvd << F(", sent = ") << _numMsgsSent << F(", receive errors = ") << endl;
-           // acan2040->receiveErrorCounter() << F(", transmit errors = ") << acan2040->transmitErrorCounter() << F(", error flag = ")
-           // << acan2040->errorFlagRegister()
+           // canp->receiveErrorCounter() << F(", transmit errors = ") << canp->transmitErrorCounter() << F(", error flag = ")
+           // << canp->errorFlagRegister()
            // << endl;
    */
 }
@@ -215,10 +212,10 @@ void VCAN2040::printStatus()
 
 void VCAN2040::reset(void)
 {
-  acan2040->stop();
+  canp->stop();
   queue_free(&rx_queue);
   queue_free(&tx_queue);
-  delete acan2040;
+  delete canp;
   begin();
 }
 

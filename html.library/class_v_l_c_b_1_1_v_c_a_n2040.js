@@ -1,0 +1,26 @@
+var class_v_l_c_b_1_1_v_c_a_n2040 =
+[
+    [ "VCAN2040", "class_v_l_c_b_1_1_v_c_a_n2040.html#a8b2bb0e5404cedc77bd59aab215e5931", null ],
+    [ "begin", "class_v_l_c_b_1_1_v_c_a_n2040.html#a9969997a98bacdd306d092ed5cdb98f5", null ],
+    [ "available", "class_v_l_c_b_1_1_v_c_a_n2040.html#a4011c538328602d89f29e3ccee20997c", null ],
+    [ "getNextCanFrame", "class_v_l_c_b_1_1_v_c_a_n2040.html#a146801235842b85d80c60eb413cb6f3c", null ],
+    [ "sendCanFrame", "class_v_l_c_b_1_1_v_c_a_n2040.html#a3a8f96ab134913caedc6424fb3cd57d5", null ],
+    [ "reset", "class_v_l_c_b_1_1_v_c_a_n2040.html#ac66d23d8522975371cba3116ba907909", null ],
+    [ "getHardwareType", "class_v_l_c_b_1_1_v_c_a_n2040.html#a806b7effc73b80efbb78ad3988ff4e4d", null ],
+    [ "setNumBuffers", "class_v_l_c_b_1_1_v_c_a_n2040.html#a2171d7bdab2e33c1eef95df0c123eff7", null ],
+    [ "setPins", "class_v_l_c_b_1_1_v_c_a_n2040.html#a8f7c0ef100407072bb4029dfe075ff3c", null ],
+    [ "setPIO", "class_v_l_c_b_1_1_v_c_a_n2040.html#add701a821e4638dc43aef6ff20a2760d", null ],
+    [ "printStatus", "class_v_l_c_b_1_1_v_c_a_n2040.html#a8f1050b5fe75c0e4a0712e4464330929", null ],
+    [ "notify_cb", "class_v_l_c_b_1_1_v_c_a_n2040.html#a4963167c20855fe06d65de687661c72f", null ],
+    [ "receiveCounter", "class_v_l_c_b_1_1_v_c_a_n2040.html#a9602adb0a63f6c126b5e4ac62dce157d", null ],
+    [ "transmitCounter", "class_v_l_c_b_1_1_v_c_a_n2040.html#a43df052700d733514e0d7c9625fc9b20", null ],
+    [ "receiveErrorCounter", "class_v_l_c_b_1_1_v_c_a_n2040.html#a33fd6f10f974677667236c0212bfaf0e", null ],
+    [ "transmitErrorCounter", "class_v_l_c_b_1_1_v_c_a_n2040.html#aba89668c398d4bb52cc9604b5f3c857f", null ],
+    [ "receiveBufferSize", "class_v_l_c_b_1_1_v_c_a_n2040.html#adb86683dd304463ecfe7e993708419cf", null ],
+    [ "transmitBufferSize", "class_v_l_c_b_1_1_v_c_a_n2040.html#a6363b48ce4d8040675bb61bf647a7a2e", null ],
+    [ "receiveBufferUsage", "class_v_l_c_b_1_1_v_c_a_n2040.html#a153fc9c1e5bbfd7d9c66426d8a8068dc", null ],
+    [ "transmitBufferUsage", "class_v_l_c_b_1_1_v_c_a_n2040.html#a0bdbf2a7d49e929a25033f5c35bdcb63", null ],
+    [ "receiveBufferPeak", "class_v_l_c_b_1_1_v_c_a_n2040.html#aa787ee90fb4ba56e256fa63ca7b8675c", null ],
+    [ "transmitBufferPeak", "class_v_l_c_b_1_1_v_c_a_n2040.html#a003d25a718939a1efd91fb0be1179dc2", null ],
+    [ "errorStatus", "class_v_l_c_b_1_1_v_c_a_n2040.html#a85d966681757a80141cca41caa212278", null ]
+];
