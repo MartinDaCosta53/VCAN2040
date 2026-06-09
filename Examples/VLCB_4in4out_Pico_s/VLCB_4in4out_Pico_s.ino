@@ -114,13 +114,13 @@ VLCB::Switch moduleSwitch[NUM_SWITCHES];  //  switch as input
 VLCB::LED moduleLED[NUM_LEDS];     //  LED as output
 byte state[NUM_SWITCHES];
 
-VLCB::VCAN2040 vcan2040 (16,4);                  // CAN transport object
+VLCB::VCAN2040 vcan2040;                  // CAN transport object
 
 // Service objects
 VLCB::LEDUserInterface ledUserInterface(LED_GRN, LED_YLW, SWITCH0);
 VLCB::SerialUserInterface serialUserInterface;
-VLCB::MinimumNodeService mnService;
-VLCB::CanService canService(&vcan2040);
+VLCB::MinimumNodeServiceWithDiagnostics mnService;
+VLCB::CanServiceWithDiagnostics canService(&vcan2040);
 VLCB::NodeVariableService nvService;
 VLCB::ConsumeOwnEventsService coeService;
 VLCB::EventConsumerService ecService;
