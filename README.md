@@ -34,22 +34,3 @@ Currently supports the Raspberry Pi Pico using Earle Philhowers Arduino IDE boar
 [Pico Arduino IDE](https://github.com/earlephilhower/arduino-pico) Full instructions on how to do this in the associated
 [documentation](https://arduino-pico.readthedocs.io/en/latest/)
 
-## Getting help and support
-
-At the moment this library is still in development and thus not fully supported.
-
-If you have any questions or suggestions please contact the library maintainers
-by email to [martindc.merg@gmail.com](mailto:martindc.merg@gmail.com) or create an issue in GitHub.
-
-## Credits
-
-* Duncan Greenwood - Created the CBUS library for Arduinos upon which this VLCB library is based on.
-* Sven Rosvall - Converted the CBUS library into the main VLCB-Arduino library suite.
-* Martin Da Costa - Contributed to Sven's work and converted the CBUSACAN2040 library to this VCAN2040.
-
-## License
-
-The code contained in this repository and the executable distributions are licensed under the terms of the
-[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](LICENSE.md).
-
-If you have questions about licensing this library please contact [martindc.merg@gmail.com](mailto:martindc.merg@gmail.com)
