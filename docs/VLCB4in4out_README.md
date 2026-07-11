@@ -63,7 +63,7 @@ associated with this example, the following third party libraries are required:
 Library | Purpose
 ---------------|-----------------
 Streaming.h  |*C++ stream style output, v5, (https://github.com/janelia-arduino/Streaming)*
-ACAN2040.h   |*library to support the software CAN controller*
+ACAN2040.h   |*library to support the software CAN controller, (https://github.com/obdevel/ACAN2040)*
 
 ### Application Configuration
 
