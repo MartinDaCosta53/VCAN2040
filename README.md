@@ -22,8 +22,12 @@ The docs folder in this repository provides notes on how to use this library wit
 It also holds a circuit schematic suitable for the code as written.
 
 ## Dependencies
-See dependancies in VLCB4in4out_README.md in this repository.
+Note that this library depends on a number of other libraries which must be downloaded and included in the sketch:
 
+* [VLCB](https://github.com/SvenRosvall/VLCB-Arduino) - The core VLCB library
+* [ACAN2040](https://github.com/obdevel/ACAN2040) - CAN bus transport using the MCP2515 controller
+* [Streaming](https://github.com/janelia-arduino/Streaming) - C++ style output
+  
 ## Hardware
 
 Currently supports the Raspberry Pi Pico using Earle Philhowers Arduino IDE board support
