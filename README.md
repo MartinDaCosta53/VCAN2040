@@ -4,10 +4,6 @@
 This library provides a software CAN interface on a Raspberry Pi Pico when used in conjunction with the VLCB_Arduino library
 suite.  The main VLCB-Arduino library can be found at [VLCB](https://github.com/SvenRosvall/VLCB-Arduino) 
 
-This VLCB library code is based on a [CBUS library](https://github.com/MERG-DEV/CBUSACAN2040) created by Duncan Greenwood
-and extended by members of [MERG](https://www.merg.org.uk/). See below under Credits.
-This code has been adapted for use with VLCB.
-
 See [Design documents](https://github.com/SvenRosvall/VLCB-Arduino/blob/main/docs/Design.md) for how this library is structured.
 
 ## Examples
