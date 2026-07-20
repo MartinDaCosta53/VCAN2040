@@ -40,7 +40,7 @@ jobs:
           arduino-cli lib install ACAN2040
           arduino-cli lib install Streaming
 
-      - name: Compile all examples for Arduino Uno
+      - name: Compile all examples for RaspberryPie Pico
         run: |
           for dir in ./examples/*; do
             if [ -d "$dir" ] && ls "$dir"/*.ino >/dev/null 2>&1; then
