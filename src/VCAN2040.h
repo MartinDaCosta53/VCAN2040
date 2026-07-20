@@ -16,9 +16,9 @@ namespace VLCB
 
 // constants
 
-static const uint32_t tx_qsize = 16;
-static const uint32_t rx_qsize = 64;
-static const uint32_t CANBITRATE = 125000UL;                // 125Kb/s - fixed for CBUS
+static const uint32_t tx_qsize = 16;                        // default value
+static const uint32_t rx_qsize = 64;                        // default value
+static const uint32_t CANBITRATE = 125000UL;                // 125Kb/s - fixed for VLCB
 
 /// @brief Transport implementation for the software CAN controller on a RP2040 / RP2350
 class VCAN2040 : public CanTransport
@@ -29,13 +29,15 @@ public:
 
   /// @cond LIBRARY
   // these methods are declared virtual in the base class and must be implemented by the derived class
-  virtual bool begin(); //bool poll = false, SPIClassRP2040 spi = SPI);    // note default args
+  virtual bool begin();
   virtual bool available() override;
   virtual CANFrame getNextCanFrame() override;
   virtual bool sendCanFrame(CANFrame * msg) override;
   virtual void reset() override;
   virtual byte getHardwareType() override { return CAN_HW_RP2040_PIO; };
 
+  // these methods are specific to this implementation
+  // they are not declared or implemented by the Transport interface class
   void setNumBuffers(unsigned int num_rx_buffers, unsigned int num_tx_buffers);
   void setPins(byte tx_pin, byte rx_pin);
   void setPIO(byte pioNum);

@@ -83,6 +83,7 @@ bool VCAN2040::available()
   /// attempt to drain down the tx buffer
 
   while (canp->ok_to_send() && queue_try_remove(&tx_queue, &tx_msg)) {
+    ++_numMsgsRcvd;
     canp->send_message(&tx_msg);
   }
 
