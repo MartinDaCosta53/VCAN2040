@@ -32,7 +32,7 @@ jobs:
       - name: Install Arduino core
         run: |
           arduino-cli core update-index
-          arduino-cli core install arduino:avr
+          arduino-cli core install arduino:rp2040
 
       - name: Install library dependencies
         run: |
