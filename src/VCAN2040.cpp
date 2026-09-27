@@ -13,6 +13,11 @@
 namespace VLCB
 {
 
+// constants
+static const uint32_t tx_qsize = 16;
+static const uint32_t rx_qsize = 64;
+static const uint32_t CANBITRATE = 125000UL;                // 125Kb/s - fixed for CBUS
+
 // static pointer to object
 VCAN2040 *vcan2040p;
 

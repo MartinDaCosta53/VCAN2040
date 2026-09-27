@@ -14,12 +14,6 @@
 namespace VLCB
 {
 
-// constants
-
-static const uint32_t tx_qsize = 16;                        // default value
-static const uint32_t rx_qsize = 64;                        // default value
-static const uint32_t CANBITRATE = 125000UL;                // 125Kb/s - fixed for VLCB
-
 /// @brief Transport implementation for the software CAN controller on a RP2040 / RP2350
 class VCAN2040 : public CanTransport
 {
@@ -44,17 +38,17 @@ public:
   void printStatus(void);
   void notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *amsg);
 
-  virtual unsigned int receiveCounter()override { return _numMsgsRcvd; }
-  virtual unsigned int transmitCounter()override { return _numMsgsSent; }
-  virtual unsigned int receiveErrorCounter()override { return 0; }
-  virtual unsigned int transmitErrorCounter()override { return _numSendErr; }
+  virtual unsigned int receiveCounter() override { return _numMsgsRcvd; }
+  virtual unsigned int transmitCounter() override { return _numMsgsSent; }
+  virtual unsigned int receiveErrorCounter() override { return 0; }
+  virtual unsigned int transmitErrorCounter() override { return _numSendErr; }
   virtual unsigned int receiveBufferSize() override { return 0; };
   virtual unsigned int transmitBufferSize() override { return 0; };
   virtual unsigned int receiveBufferUsage() override { return queue_get_level(&rx_queue); };
   virtual unsigned int transmitBufferUsage() override { return queue_get_level(&tx_queue); };
   virtual unsigned int receiveBufferPeak() override { return _hwmRx; };
   virtual unsigned int transmitBufferPeak() override { return _hwmTx; };
-  virtual unsigned int errorStatus()override { return 0; } 
+  virtual unsigned int errorStatus() override { return 0; } 
   /// @endcond
 
 private:

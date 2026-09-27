@@ -19,8 +19,8 @@ The program is written in C++ but you do not need to understand this to use the 
 The program includes a library that manages the LED functionality.
 
 NOTE: It can get difficult when using DEBUG to know where the message has come from. Those
-emanating from the sketch are preceded with the letters sk for sketch. In the case of dual
-core use, the numebr 0 or 1 appears before the > to indicate which core generated the message.
+emanating from the sketch are preceded with the letters sk for sketch. In the case of 
+dual-core use, the number 0 or 1 appears before the > to indicate which core generated the message.
 Debug can be turned on by making #define DEBUG at the beginning of the sketch equal to 1.
 Similarly, debug can be turned off by making #define DEBUG equal to 0.  In teh Arduino IDE,
 debug logging will be shown in the Serial Monitor window.
@@ -39,7 +39,7 @@ Pin 20 GP15 | VLCB Yellow LED
 Pin 17 GP13 | VLCB Switch
 
 **It is the users responsibility that the total current that the Pico is asked to supply 
-stays within the capacity of the on board regulator.  Failure to do this will result in 
+stays within the capacity of the onboard regulator.  Failure to do this will result in 
 terminal damage to your Pico.**
 
 Pins defined as inputs are active low.  That is to say that they are pulled up by an 
@@ -49,7 +49,7 @@ Pins defined as outputs are active low.  They will sink current from (say) an LE
 important that a suitable current limiting resistor is fitted between +3V3 and the LED 
 anode.  The LED cathode should be connected to the output pin.
 
-This additonal circuitry can be built using any breadboard technique with which the user
+This additional circuitry can be built using any breadboard technique with which the user
 is comfortable.  A circuit schematic of the authors test set is here [test circuit](https://github.com/MartinDaCosta53/VCAN2040/tree/main/docs/PDFs)
 
 It maybe that the Shield for Pico to CBus interface taht was renently show cased on the [MERG Forum](https://www.merg.org.uk/forum/viewtopic.php?f=316&t=18021)
@@ -139,7 +139,7 @@ switch will now generate that short event (but see FCU Anomolies below).
 If a switch default has been unlearnt and that switch not been assigned to an
 event by the FCU, operation of the switch will result in a new default event
 being generated as long as its NV Value is set for a function other than
-"Do Nothing" (See Node Variables below).
+"Do Nothing". (See Node Variables below.)
 
 ### Consume Own Events
 
@@ -178,7 +178,7 @@ The module is initialised by pressing the VLCB button (formerly CBUS button) for
 6 seconds when the green LED goes off and the Yellow LED flashes. A module name and
 Node Number can then be set via the FCU in the normal manner.
 
-## FCU Anomolies
+## FCU Anomalies
 
 Whilst the FCU will show newly taught events, if these re-assign a switch, as when
 teaching a short event, it will not, for some reason, remove the now gone original
