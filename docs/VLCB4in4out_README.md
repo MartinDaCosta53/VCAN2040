@@ -7,7 +7,7 @@ Key Features:
 - LED flash rate selectable from event variables.
 - Switch function controllable by node variables.
 - Modular construction to ease adaptation to your application.
-- Runs on a Raspberry Pie Pico using a software CAN Controller.
+- Runs on a Raspberry Pi Pico using a software CAN Controller.
 
 The example sketches are fully functional modules.  Whilst they can be used "as is", the
 primary objective is to be a guide for developers to create their own modules to meet their
@@ -28,7 +28,7 @@ debug logging will be shown in the Serial Monitor window.
 ## Using VLCB4in4out
 
 This example is configured for use with a Pico. There are two versions: one runs the sketch
-on a single core whilst the other uses dual cores.  In the case of the dual core example,
+on a single core whilst the other uses dual cores.  In the case of the dual-core example,
 the VLCB code runs on core 0 and the 4 in 4 out application runs on core 1. Functionally,
 the two versions are identical.
 
@@ -50,9 +50,10 @@ important that a suitable current limiting resistor is fitted between +3V3 and t
 anode.  The LED cathode should be connected to the output pin.
 
 This additional circuitry can be built using any breadboard technique with which the user
-is comfortable.  A circuit schematic of the authors test set is here [test circuit](https://github.com/MartinDaCosta53/VCAN2040/tree/main/docs/PDFs)
+is comfortable.  A circuit schematic of the authors test set is here [test circuit](https://github.com/MartinDaCosta53/VCAN2040/tree/main/docs/PDFs).
+Note that if other circuitry is used then the pin numbers may need to change. 
 
-It maybe that the Shield for Pico to CBus interface taht was renently show cased on the [MERG Forum](https://www.merg.org.uk/forum/viewtopic.php?f=316&t=18021)
+It maybe that the Shield for Pico to CBus interface that was recently showcased on the [MERG Forum](https://www.merg.org.uk/forum/viewtopic.php?f=316&t=18021)
 could be used but there is no information is currently available to the author for assessment.
 
 ### Library Dependencies
@@ -185,11 +186,5 @@ teaching a short event, it will not, for some reason, remove the now gone origin
 event automatically. It is necessary to highlight the redundant event and use
 alt-D to remove it.
 
-It should be noted that the use of alt-D only removes an event from the FCU internal
+It should be noted that the use of Alt-D only removes an event from the FCU internal
 table.  It does not remove the event from the Pico events table.
-
-
- 
- 
- 
- 
