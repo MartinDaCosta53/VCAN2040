@@ -184,7 +184,7 @@ Node Number can then be set via the FCU in the normal manner.
 Whilst the FCU will show newly taught events, if these re-assign a switch, as when
 teaching a short event, it will not, for some reason, remove the now gone original
 event automatically. It is necessary to highlight the redundant event and use
-alt-D to remove it.
+Alt-D to remove it.
 
 It should be noted that the use of Alt-D only removes an event from the FCU internal
 table.  It does not remove the event from the Pico events table.

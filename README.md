@@ -12,8 +12,8 @@ There are two versions of the example that, from the users perspective, are func
 The first uses a single core in the Pico and is identified as VLCB_4in4out_Pico_s, where 's' stands
 for single core.  The other core will be dormant in a low power state.
 The second version makes use of both cores in the processor and is identified as VLCB_4in4out_Pico_d,
-where 'd' stands for dual-core.  This is organised such that the VLCB library runs in core 0 and the
-application runs in core 1.
+where 'd' stands for dual-core.  This is organised such that the application runs in core 0 and the  
+VLCB library runs in core 1.
 
 The docs folder in this repository provides notes on how to use this library with the 4in4out examples.
 It also holds a circuit schematic suitable for the code as written.
