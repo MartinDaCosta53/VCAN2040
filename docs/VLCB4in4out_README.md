@@ -7,7 +7,7 @@ Key Features:
 - LED flash rate selectable from event variables.
 - Switch function controllable by node variables.
 - Modular construction to ease adaptation to your application.
-- Runs on a Raspberry Pie Pico using a software CAN Controller.
+- Runs on a Raspberry Pi Pico using a software CAN Controller.
 
 The example sketches are fully functional modules.  Whilst they can be used "as is", the
 primary objective is to be a guide for developers to create their own modules to meet their
@@ -19,8 +19,8 @@ The program is written in C++ but you do not need to understand this to use the 
 The program includes a library that manages the LED functionality.
 
 NOTE: It can get difficult when using DEBUG to know where the message has come from. Those
-emanating from the sketch are preceded with the letters sk for sketch. In the case of dual
-core use, the numebr 0 or 1 appears before the > to indicate which core generated the message.
+emanating from the sketch are preceded with the letters sk for sketch. In the case of 
+dual-core use, the number 0 or 1 appears before the > to indicate which core generated the message.
 Debug can be turned on by making #define DEBUG at the beginning of the sketch equal to 1.
 Similarly, debug can be turned off by making #define DEBUG equal to 0.  In teh Arduino IDE,
 debug logging will be shown in the Serial Monitor window.
@@ -28,7 +28,7 @@ debug logging will be shown in the Serial Monitor window.
 ## Using VLCB4in4out
 
 This example is configured for use with a Pico. There are two versions: one runs the sketch
-on a single core whilst the other uses dual cores.  In the case of the dual core example,
+on a single core whilst the other uses dual cores.  In the case of the dual-core example,
 the VLCB code runs on core 0 and the 4 in 4 out application runs on core 1. Functionally,
 the two versions are identical.
 
@@ -39,7 +39,7 @@ Pin 20 GP15 | VLCB Yellow LED
 Pin 17 GP13 | VLCB Switch
 
 **It is the users responsibility that the total current that the Pico is asked to supply 
-stays within the capacity of the on board regulator.  Failure to do this will result in 
+stays within the capacity of the onboard regulator.  Failure to do this will result in 
 terminal damage to your Pico.**
 
 Pins defined as inputs are active low.  That is to say that they are pulled up by an 
@@ -49,10 +49,11 @@ Pins defined as outputs are active low.  They will sink current from (say) an LE
 important that a suitable current limiting resistor is fitted between +3V3 and the LED 
 anode.  The LED cathode should be connected to the output pin.
 
-This additonal circuitry can be built using any breadboard technique with which the user
-is comfortable.  A circuit schematic of the authors test set is here [test circuit](https://github.com/MartinDaCosta53/VCAN2040/tree/main/docs/PDFs)
+This additional circuitry can be built using any breadboard technique with which the user
+is comfortable.  A circuit schematic of the authors test set is here [test circuit](https://github.com/MartinDaCosta53/VCAN2040/tree/main/docs/PDFs).
+Note that if other circuitry is used then the pin numbers may need to change. 
 
-It maybe that the Shield for Pico to CBus interface taht was renently show cased on the [MERG Forum](https://www.merg.org.uk/forum/viewtopic.php?f=316&t=18021)
+It maybe that the Shield for Pico to CBus interface that was recently showcased on the [MERG Forum](https://www.merg.org.uk/forum/viewtopic.php?f=316&t=18021)
 could be used but there is no information is currently available to the author for assessment.
 
 ### Library Dependencies
@@ -139,7 +140,7 @@ switch will now generate that short event (but see FCU Anomolies below).
 If a switch default has been unlearnt and that switch not been assigned to an
 event by the FCU, operation of the switch will result in a new default event
 being generated as long as its NV Value is set for a function other than
-"Do Nothing" (See Node Variables below).
+"Do Nothing". (See Node Variables below.)
 
 ### Consume Own Events
 
@@ -178,18 +179,12 @@ The module is initialised by pressing the VLCB button (formerly CBUS button) for
 6 seconds when the green LED goes off and the Yellow LED flashes. A module name and
 Node Number can then be set via the FCU in the normal manner.
 
-## FCU Anomolies
+## FCU Anomalies
 
 Whilst the FCU will show newly taught events, if these re-assign a switch, as when
 teaching a short event, it will not, for some reason, remove the now gone original
 event automatically. It is necessary to highlight the redundant event and use
 alt-D to remove it.
 
-It should be noted that the use of alt-D only removes an event from the FCU internal
+It should be noted that the use of Alt-D only removes an event from the FCU internal
 table.  It does not remove the event from the Pico events table.
-
-
- 
- 
- 
- 

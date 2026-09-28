@@ -4,14 +4,15 @@
 This library provides a software CAN interface on a Raspberry Pi Pico when used in conjunction with the VLCB_Arduino library
 suite.  The main VLCB-Arduino library can be found at [VLCB](https://github.com/SvenRosvall/VLCB-Arduino) 
 
-See [Design documents](https://github.com/SvenRosvall/VLCB-Arduino/blob/main/docs/Design.md) for how this library is structured.
+See [Design documents](https://github.com/SvenRosvall/VLCB-Arduino/blob/main/docs/Design.md)
+for how the VLCB library is structured and how this VCAN2040 driver is used.
 
 ## Examples
 There are two versions of the example that, from the users perspective, are functionally idential.
 The first uses a single core in the Pico and is identified as VLCB_4in4out_Pico_s, where 's' stands
 for single core.  The other core will be dormant in a low power state.
-The second version makes use of both cores in the processer and is identifed as VLCB_4in4out_Pico_d,
-where 'd' stands for dual core.  This is organised such that the VLCB library runs in core 0 and the
+The second version makes use of both cores in the processor and is identified as VLCB_4in4out_Pico_d,
+where 'd' stands for dual-core.  This is organised such that the VLCB library runs in core 0 and the
 application runs in core 1.
 
 The docs folder in this repository provides notes on how to use this library with the 4in4out examples.
@@ -26,7 +27,7 @@ Note that this library depends on a number of other libraries which must be down
   
 ## Hardware
 
-Currently supports the Raspberry Pi Pico using Earle Philhowers Arduino IDE board support
+Currently, supports the Raspberry Pi Pico using Earle Philhowers Arduino IDE board support
 [Pico Arduino IDE](https://github.com/earlephilhower/arduino-pico) Full instructions on how to do this in the associated
 [documentation](https://arduino-pico.readthedocs.io/en/latest/)
 
