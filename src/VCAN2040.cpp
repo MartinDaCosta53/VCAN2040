@@ -3,12 +3,7 @@
 // Licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License.
 // The full licence can be found at: http://creativecommons.org/licenses/by-nc-sa/4.0/
 
-
-// 3rd party libraries
-#include <Streaming.h>
-
-
-#include <VCAN2040.h>
+#include "VCAN2040.h"
 
 namespace VLCB
 {
@@ -19,19 +14,64 @@ static const uint32_t rx_qsize = 64;
 static const uint32_t CANBITRATE = 125000UL;                // 125Kb/s - fixed for CBUS
 
 // static pointer to object
-VCAN2040 *vcan2040p;
+static VCAN2040 *vcan2040p;
 
-// static callback function
+// can2040 context - owned here, since can2040 is driven directly.
+// Only one bus is supported per VCAN2040 object / sketch, on PIO 0, 1 or (RP2350) 2.
+static struct can2040 can_ctx;
+
+// static callback function passed to can2040
 static void cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg)
 {
   vcan2040p->notify_cb(cd, notify, msg);
+}
+
+// PIO IRQ handlers - must be plain static functions, not class members
+static void pio0_irq_handler(void)
+{
+  can2040_pio_irq_handler(&can_ctx);
+}
+
+static void pio1_irq_handler(void)
+{
+  can2040_pio_irq_handler(&can_ctx);
+}
+
+#ifdef PICO_RP2350
+static void pio2_irq_handler(void)
+{
+  can2040_pio_irq_handler(&can_ctx);
+}
+#endif
+
+// map PIO number to its IRQ number and handler; returns false if unsupported
+static bool pioIrqInfo(byte pioNum, uint &irq, irq_handler_t &handler)
+{
+  switch (pioNum)
+  {
+  case 0:
+    irq = PIO0_IRQ_0;
+    handler = pio0_irq_handler;
+    return true;
+  case 1:
+    irq = PIO1_IRQ_0;
+    handler = pio1_irq_handler;
+    return true;
+#ifdef PICO_RP2350
+  case 2:
+    irq = PIO2_IRQ_0;
+    handler = pio2_irq_handler;
+    return true;
+#endif
+  default:
+    return false;
+  }
 }
 
 //
 /// constructor
 //
 VCAN2040::VCAN2040()
- 
 {
   _num_rx_buffers = rx_qsize;
   _num_tx_buffers = tx_qsize;
@@ -52,14 +92,23 @@ void VCAN2040::setPins(byte gpio_tx, byte gpio_rx)
 
 //
 /// initialise the CAN controller and buffers, and attach the ISR
-/// default poll arg is set to false, so as not to break existing code
 //
 
 bool VCAN2040::begin()
 {
+  uint irq;
+  irq_handler_t handler;
+
+  if (!pioIrqInfo(_pioNum, irq, handler))
+  {
+    return false;   // PIO instance not available on this chip
+  }
+
   _numMsgsSent = 0;
   _numMsgsRcvd = 0;
-  _numSendErr = 0;
+  _numTxDropped = 0;
+  _numRxErr = 0;
+  _lastErrorCode = 0;
   _hwmRx = 0;
   _hwmTx = 0;
   
@@ -69,10 +118,43 @@ bool VCAN2040::begin()
   queue_init(&rx_queue, sizeof(struct can2040_msg), _num_rx_buffers);
 
   /// initialise the can2040 CAN driver
+  /// https://github.com/KevinOConnor/can2040/blob/master/docs/API.md#startup
 
-  canp = new ACAN2040(_pioNum, _gpio_tx, _gpio_rx, CANBITRATE, F_CPU, cb);
-  canp->begin();
+  can2040_setup(&can_ctx, _pioNum);
+  can2040_callback_config(&can_ctx, cb);
+
+  // enable the PIO irq
+  irq_set_exclusive_handler(irq, handler);
+  irq_set_priority(irq, 1);
+  irq_set_enabled(irq, true);
+
+  // start canbus message processing
+  can2040_start(&can_ctx, F_CPU, CANBITRATE, _gpio_rx, _gpio_tx);
+  _running = true;
   return true;
+}
+
+//
+/// stop can2040 and detach the PIO irq handler
+//
+void VCAN2040::stopDriver()
+{
+  uint irq;
+  irq_handler_t handler;
+
+  if (!_running)
+  {
+    return;
+  }
+
+  can2040_stop(&can_ctx);
+
+  if (pioIrqInfo(_pioNum, irq, handler))
+  {
+    irq_set_enabled(irq, false);
+    irq_remove_handler(irq, handler);
+  }
+  _running = false;
 }
 
 //
@@ -82,14 +164,16 @@ bool VCAN2040::begin()
 //
 bool VCAN2040::available()
 {  
-  CANFrame frame;
   struct can2040_msg tx_msg;
 
   /// attempt to drain down the tx buffer
 
-  while (canp->ok_to_send() && queue_try_remove(&tx_queue, &tx_msg)) {
-    ++_numMsgsRcvd;
-    canp->send_message(&tx_msg);
+  while (can2040_check_transmit(&can_ctx) && queue_try_remove(&tx_queue, &tx_msg))
+  {
+    if (can2040_transmit(&can_ctx, &tx_msg) != 0)
+    {
+      ++_numTxDropped;
+    }
   }
 
   /// check for new received messages
@@ -103,18 +187,18 @@ bool VCAN2040::available()
 CANFrame VCAN2040::getNextCanFrame(void)
 {
   struct can2040_msg rx_msg;
-  CANFrame frame;
+  CANFrame frame = {};
 
   if (queue_try_remove(&rx_queue, &rx_msg))
   {
-
-    frame.id = rx_msg.id;
+    frame.id = rx_msg.id & 0x1fffffffUL;     // strip can2040 RTR/EFF flag bits
     frame.len = rx_msg.dlc;
 
-    frame.rtr = (rx_msg.id & CAN2040_ID_RTR);
-    frame.ext = (rx_msg.id & CAN2040_ID_EFF);
+    frame.rtr = (rx_msg.id & CAN2040_ID_RTR) != 0;
+    frame.ext = (rx_msg.id & CAN2040_ID_EFF) != 0;
 
-    for (byte i = 0; i < rx_msg.dlc && i < 8; i++) {
+    for (byte i = 0; i < rx_msg.dlc && i < 8; i++)
+    {
       frame.data[i] = rx_msg.data[i];
     }
   }
@@ -123,38 +207,34 @@ CANFrame VCAN2040::getNextCanFrame(void)
 }
 
 //
-/// callback
+/// callback - called from the PIO IRQ handler, so keep it short and don't print
 //
 
 void VCAN2040::notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *amsg)
 {
   (void)(cd);
 
-  switch (notify)
+  // error notifications carry an error code in the low bits, so test flags rather than equality
+  if (notify & CAN2040_NOTIFY_RX)
   {
-  case CAN2040_NOTIFY_RX:
-    //Serial.printf("canp cb: message received\n");
     ++_numMsgsRcvd;
     queue_try_add(&rx_queue, amsg);
-    if(queue_get_level(&rx_queue) > _hwmRx)
+    unsigned int level = queue_get_level(&rx_queue);
+    if (level > _hwmRx)
     {
-      _hwmRx = queue_get_level(&rx_queue);
+      _hwmRx = level;
     }
-    break;
-
-  case CAN2040_NOTIFY_TX:
-    //sendFrames--;
-    //Serial.printf("canp cb: message sent ok\n");
-    break;
-  case CAN2040_NOTIFY_ERROR:
-    Serial.printf("canp cb: an error occurred\n");
-    break;
-  default:
-    Serial.printf("canp cb: unknown event type\n");
-    break;
   }
-
-  return;
+  else if (notify & CAN2040_NOTIFY_ERROR)
+  {
+    ++_numRxErr;
+    _lastErrorCode = notify & 0xfffffUL;   // error code is in the low 20 bits
+  }
+  else if (notify & CAN2040_NOTIFY_TX)
+  {
+    // frame has completed on the bus with a good ack
+    ++_numMsgsSent;
+  }
 }
 
 //
@@ -162,37 +242,68 @@ void VCAN2040::notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg
 //
 bool VCAN2040::sendCanFrame(CANFrame *frame)
 {
-  struct can2040_msg msg;
-  
-  //sendFrames++;
-  
- 
-  //DEBUG_SERIAL << F("vcan2040> Send Frames waiting = ") << sendFrames << F(". Wait Time = ") << waitTime << F(" usecs") << endl;
-  msg.id = frame->id;  
+  struct can2040_msg msg = {};
+
+  msg.id = frame->id;
   msg.dlc = frame->len;
-  
+
   if (frame->rtr)
-    msg.id |= 0x40000000;
+    msg.id |= CAN2040_ID_RTR;
 
   if (frame->ext)
-    msg.id |= 0x80000000;
+    msg.id |= CAN2040_ID_EFF;
 
-  memcpy(msg.data, frame->data, frame->len);
-  
-  if (canp->ok_to_send())
+  memcpy(msg.data, frame->data, frame->len > 8 ? 8 : frame->len);
+
+  // send directly only if nothing is already waiting, to preserve ordering
+  if (queue_is_empty(&tx_queue) && can2040_check_transmit(&can_ctx))
   {
-    //Serial.printf("vcan2040> ok\n");
-    ++_numMsgsSent;
-    return (canp->send_message(&msg));
-  } else 
-  {
-    if(queue_get_level(&tx_queue) > _hwmTx)
+    if (can2040_transmit(&can_ctx, &msg) == 0)
     {
-      _hwmTx = queue_get_level(&tx_queue);
+      return true;
     }
-    //Serial.printf("vcan2040> error sending message\n");
-    return (queue_try_add(&tx_queue, &msg));
-  }  
+    ++_numTxDropped;
+    return false;
+  }
+
+  // can2040 tx queue full (or backlog exists) - buffer it, available() will drain it
+  bool queued = queue_try_add(&tx_queue, &msg);
+  unsigned int level = queue_get_level(&tx_queue);
+  if (level > _hwmTx)
+  {
+    _hwmTx = level;
+  }
+  if (!queued)
+  {
+    ++_numTxDropped;
+  }
+  return queued;
+}
+
+//
+/// retrieve can2040 statistics - see can2040 API docs
+//
+void VCAN2040::getStatistics(struct can2040_stats *stats)
+{
+  can2040_get_statistics(&can_ctx, stats);
+}
+
+//
+/// bus-level error counters, derived from can2040 statistics
+//
+unsigned int VCAN2040::receiveErrorCounter()
+{
+  struct can2040_stats stats;
+  can2040_get_statistics(&can_ctx, &stats);
+  return stats.parse_error + _numRxErr;
+}
+
+unsigned int VCAN2040::transmitErrorCounter()
+{
+  struct can2040_stats stats;
+  can2040_get_statistics(&can_ctx, &stats);
+  // an attempt may be in flight, so clamp rather than go negative
+  return (stats.tx_attempt > stats.tx_total) ? (stats.tx_attempt - stats.tx_total) : 0;
 }
 
 //
@@ -201,15 +312,7 @@ bool VCAN2040::sendCanFrame(CANFrame *frame)
 void VCAN2040::printStatus()
 {
   // removed so that no libraries produce serial output
-  // can be implemented in user's sketch
-
-  /*
-    DEBUG_SERIAL << F("> VLCB status:");
-    DEBUG_SERIAL << F(" messages received = ") << _numMsgsRcvd << F(", sent = ") << _numMsgsSent << F(", receive errors = ") << endl;
-           // canp->receiveErrorCounter() << F(", transmit errors = ") << canp->transmitErrorCounter() << F(", error flag = ")
-           // << canp->errorFlagRegister()
-           // << endl;
-   */
+  // can be implemented in user's sketch, using getStatistics() and the counters above
 }
 
 //
@@ -218,10 +321,9 @@ void VCAN2040::printStatus()
 
 void VCAN2040::reset(void)
 {
-  canp->stop();
+  stopDriver();
   queue_free(&rx_queue);
   queue_free(&tx_queue);
-  delete canp;
   begin();
 }
 

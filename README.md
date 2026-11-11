@@ -1,8 +1,9 @@
 <img align="right" src="ArduinoVLCB.png"  width="150" height="75">
 
 # VCAN2040
-This library provides a software CAN interface on a Raspberry Pi Pico when used in conjunction with the VLCB_Arduino library
-suite.  The main VLCB-Arduino library can be found at [VLCB](https://github.com/SvenRosvall/VLCB-Arduino) 
+This library provides a software CAN interface for the RP2040/RP235x when used in conjunction with
+the VLCB_Arduino library suite.  It utilises [Kevin O'Connor's CAN driver](https://github.com/KevinOConnor/can2040)
+using the PIOs of the RP2040/RP235x microcontrollers.  The main VLCB-Arduino library can be found at [VLCB](https://github.com/SvenRosvall/VLCB-Arduino) 
 
 See [Design documents](https://github.com/SvenRosvall/VLCB-Arduino/blob/main/docs/Design.md)
 for how the VLCB library is structured and how this VCAN2040 driver is used.
@@ -22,12 +23,12 @@ It also holds a circuit schematic suitable for the code as written.
 Note that this library depends on a number of other libraries which must be downloaded and included in the sketch:
 
 * [VLCB](https://github.com/SvenRosvall/VLCB-Arduino) - The core VLCB library
-* [ACAN2040](https://github.com/obdevel/ACAN2040) - CAN bus transport using the MCP2515 controller
+* [can2040](https://github.com/KevinOConnor/can2040) - CAN controller using a PIO in RP2040/RP235x
 * [Streaming](https://github.com/janelia-arduino/Streaming) - C++ style output
   
 ## Hardware
 
-Currently, supports the Raspberry Pi Pico using Earle Philhowers Arduino IDE board support
+Supports RP2040/RP235x boards, such as Raspberry Pi Pico and Pico2 using Earle Philhowers Arduino IDE board support
 [Pico Arduino IDE](https://github.com/earlephilhower/arduino-pico) Full instructions on how to do this in the associated
 [documentation](https://arduino-pico.readthedocs.io/en/latest/)
 

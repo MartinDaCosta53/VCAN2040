@@ -9,12 +9,23 @@
 
 #include <Controller.h>
 #include <CanTransport.h>
-#include <ACAN2040.h>          // ACAN2040 library
+
+// Pico SDK headers (supplied with the arduino-pico core)
+#include <hardware/irq.h>
+#include <pico/util/queue.h>
+
+// can2040 software CAN driver (C library, used directly - no wrapper class)
+extern "C" {
+#include "can2040.h"
+}
 
 namespace VLCB
 {
 
 /// @brief Transport implementation for the software CAN controller on a RP2040 / RP2350
+///
+/// Talks to the can2040 C API directly. The PIO IRQ handler and the can2040
+/// context are owned by this class (one instance / one PIO per sketch).
 class VCAN2040 : public CanTransport
 {
 public:
@@ -38,26 +49,37 @@ public:
   void printStatus(void);
   void notify_cb(struct can2040 *cd, uint32_t notify, struct can2040_msg *amsg);
 
+  /// retrieve the underlying can2040 statistics
+  void getStatistics(struct can2040_stats *stats);
+
   virtual unsigned int receiveCounter() override { return _numMsgsRcvd; }
   virtual unsigned int transmitCounter() override { return _numMsgsSent; }
-  virtual unsigned int receiveErrorCounter() override { return 0; }
-  virtual unsigned int transmitErrorCounter() override { return _numSendErr; }
+  // bus-level errors, taken from can2040 statistics
+  virtual unsigned int receiveErrorCounter() override;    // parse errors + rx overflow resets
+  virtual unsigned int transmitErrorCounter() override;   // transmit attempts that did not complete
+
+  /// frames lost locally because both the can2040 and software tx queues were full
+  unsigned int droppedFrameCounter() { return _numTxDropped; }
+
+  /// error status from the most recent CAN2040_NOTIFY_ERROR (always 0 in current can2040)
   virtual unsigned int receiveBufferSize() override { return 0; };
   virtual unsigned int transmitBufferSize() override { return 0; };
   virtual unsigned int receiveBufferUsage() override { return queue_get_level(&rx_queue); };
   virtual unsigned int transmitBufferUsage() override { return queue_get_level(&tx_queue); };
   virtual unsigned int receiveBufferPeak() override { return _hwmRx; };
   virtual unsigned int transmitBufferPeak() override { return _hwmTx; };
-  virtual unsigned int errorStatus() override { return 0; } 
+  virtual unsigned int errorStatus() override { return _lastErrorCode; } 
   /// @endcond
 
 private:
-  ACAN2040 *canp;   // pointer to CAN object
-  unsigned int _numMsgsSent, _numMsgsRcvd, _numSendErr, _hwmRx, _hwmTx;
-  unsigned int _num_rx_buffers, _num_tx_buffers;
-  byte _gpio_tx, _gpio_rx;
-  byte _pioNum = 0;
-  queue_t tx_queue, rx_queue;
+  void stopDriver();
 
+  volatile unsigned int _numMsgsSent = 0, _numMsgsRcvd = 0, _numTxDropped = 0, _numRxErr = 0, _lastErrorCode = 0;
+  volatile unsigned int _hwmRx = 0, _hwmTx = 0;
+  unsigned int _num_rx_buffers, _num_tx_buffers;
+  byte _gpio_tx = 0, _gpio_rx = 0;
+  byte _pioNum = 0;
+  bool _running = false;
+  queue_t tx_queue, rx_queue;
 };
 }
